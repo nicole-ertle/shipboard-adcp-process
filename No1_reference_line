@@ -1,0 +1,119 @@
+%% No1_reference_line.m
+% Determines the endpoints of reference lines for visualization...not the
+% actual ref line endpoints.
+
+% interim files saved (not needed to carry forward)
+% BI_poly_L#.mat 'lonp' 'latp' 'xp' 'yp'
+% BIreference_L#_interim.mat 'slope' 'yint' 'theta' 
+% BI_L#_viz.mat 'lonxos' 'latyos' 'lonxws' 'latyws'
+
+load('BI_adcp.mat') %concat files from Cody
+
+%% coastline for reference
+ncfilecoast = 'grid_bbay_v7s.nc';
+lon_coast = ncread(ncfilecoast,'lon_coast');
+lat_coast = ncread(ncfilecoast,'lat_coast');
+
+%% convert lon,lat to x,y and compare converted
+m_proj('get') %shows current parameters
+m_proj('UTM', 'lon<gitude>',[-75 -74], 'lat<itude>',[39 40], 'zon<e>', 18, 'hem<isphere>', [0], 'ell<ipsoid>', 'wgs84', 'rectbox', 'on');
+
+% un-cropped 'all' data
+[Xall,Yall]= m_ll2xy(lon, lat, 'clip', 'off'); %lat lon to xy
+
+% coastline data
+[lon_coast_utm,lat_coast_utm]= m_ll2xy(lon_coast, lat_coast, 'clip', 'off'); %lat lon to xy
+
+% limits for plotting (BI)
+lonlim= [-74.115,-74.085];
+latlim= [39.745, 39.775];
+[xlimp,ylimp]= m_ll2xy(lonlim, latlim, 'clip', 'off'); 
+
+%% plot figure and 'all' data
+figure color 'w'
+plot(lon_coast_utm, lat_coast_utm,'m')
+ax=gca;
+set(gca,'Xlim',[575824.143051300, 578360.481319875]) %BI
+ax.YLim=[4399829.75000541, 4403185.21331742]; 
+x_range= ax.XLim(2)-ax.XLim(1);
+y_range= ax.YLim(2)-ax.YLim(1);
+ax.PlotBoxAspectRatio= [1,y_range/x_range,1];
+
+hold on
+plot(Xall,Yall)
+
+%% ginput to select polygon OR load file name
+
+fname= input('Enter the polygon file name with extension (or type "no" to use ginput): ', 's');
+
+switch lower(fname)
+    case 'no'
+        disp('Using ginput instead. Please select points on the figure.');
+        [lonp latp]= m_ginput('ShowPoints', true, 'ConnectPoints', true); % create poly
+    otherwise 
+        load(fname);
+end
+
+%% convert poly to xy
+[xp,yp]= m_ll2xy(lonp, latp, 'clip', 'off'); %lat lon to xy
+
+[in]= inpolygon(Xall,Yall,xp,yp);
+plot(Xall(in),Yall(in),'.r','MarkerSize',5) %plot just the data w/in poly
+
+%% crop data by polygon
+xcroppedp= Xall(in); %polygon cropped data 
+ycroppedp= Yall(in);
+timecroppedp= time(in);
+
+%% polyfit for best fit line (reference line)
+X=xcroppedp;
+Y=ycroppedp;
+
+p= polyfit(X,Y,1);
+f= polyval (p,X);
+
+% run coastline fig
+figure color 'w'
+plot(lon_coast_utm, lat_coast_utm,'m')
+ax=gca;
+set(gca,'Xlim',[575824.143051300, 578360.481319875]) %BI
+ax.YLim=[4399829.75000541, 4403185.21331742]; 
+x_range= ax.XLim(2)-ax.XLim(1);
+y_range= ax.YLim(2)-ax.YLim(1);
+ax.PlotBoxAspectRatio= [1,y_range/x_range,1];
+
+hold on
+plot(X,Y,X,f,'-')
+ 
+slope= p(1);
+yint= p(2);
+theta= atand(slope);
+
+%% data brush endpoints - in figure > export
+% adjust order as needed
+xo_s = brushedData(1,1);    
+yo_s = brushedData(1,2);
+xw_s = brushedData(2,1);    
+yw_s = brushedData(2,2);
+
+xr_s= [xo_s; xw_s];
+yr_s= [yo_s; yw_s];
+
+% convert to lat/lon 
+[lonr_s,latr_s]=m_xy2ll(xr_s,yr_s);
+
+lonxos = lonr_s(1); 
+latyos = latr_s(1);
+
+lonxws = lonr_s(2); 
+latyws = latr_s(2);
+
+%% saves - interim *can protect inside a statement*
+% save BI_poly_L4.mat 'lonp' 'latp' 'xp' 'yp'
+% save BIreference_L4_interim.mat 'slope' 'yint' 'theta' 
+% save BI_L4_viz.mat 'lonxos' 'latyos' 'lonxws' 'latyws'
+
+%% NEXT
+% load the endpoints into software and extend if needed to create new
+% endpoints for ref line, to be fed into next script, 2b if needed, then re
+% run this script.
