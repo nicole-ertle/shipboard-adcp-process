@@ -1,0 +1,80 @@
+%% No2_reference_line.m
+% After loading BI_L1_viz.mat into software to adjust endpoints, the new
+% endpoints are entered here.
+% Deliverables: reference line endpoints for each survey line.
+% Files to carry forward:
+% save BI_reference_line_L#.mat 'xo' 'yo' 'xw' 'yw'
+
+% note: if lat/lon are converted to x/y and theta is determined from
+% atand(slope), there is a slight difference: see L2.
+
+%% each segment run separately
+
+%% L1
+xo= -74.10590746;
+yo= 39.76455659;
+
+xw= -74.1004388;
+yw= 39.76826182;
+
+xr= [xo; xw];
+yr= [yo; yw];
+
+dref= m_lldist(xr,yr); %0.6184 km; distance of reference line
+[s,a12,a21]=m_idist(xo,yo,xw,yw); %a12= bearing from start to end
+theta= mod(450-a12,360); %36.7340
+
+%% L2
+xo= -74.10166527;
+yo= 39.76276878;
+
+xw= -74.09768255;
+yw= 39.76552215;
+
+xr= [xo; xw];
+yr= [yo; yw];
+
+dref= m_lldist(xr,yr); %0.4584 km
+[s,a12,a21]=m_idist(xo,yo,xw,yw); 
+theta= mod(450-a12,360); %41.8553
+
+% initiate projection - example of discrepancy
+m_proj('UTM', 'lon<gitude>',[-75 -74], 'lat<itude>',[39 40], 'zon<e>', 18, 'hem<isphere>', [0], 'ell<ipsoid>', 'wgs84', 'rectbox', 'on');
+
+[xtest,ytest]= m_ll2xy(xr, yr, 'clip', 'off'); %lat lon to xy
+drefxy= m_xydist(xtest,ytest); %0.4584 km;
+slopetestxy= (ytest(2)-ytest(1))/(xtest(2)-xtest(1)); %0.9141, line was same
+thetatestxy=atand(slopetestxy); %42.4299, line was 42.4301
+
+[lon,lat]= m_xy2ll(xtest,ytest);
+
+%% L3
+xo= -74.0987723;
+yo= 39.76096803;
+
+xw= -74.09518835;
+yw= 39.76339612;
+
+xr= [xo; xw];
+yr= [yo; yw];
+
+dref= m_lldist(xr,yr); %0.4154 km
+[s,a12,a21]=m_idist(xo,yo,xw,yw); 
+theta= mod(450-a12,360); %37.3316
+
+%% L4
+xo= -74.0959649;
+yo= 39.75920245;
+
+xw= -74.09276864;
+yw= 39.76136781;
+
+xr= [xo; xw];
+yr= [yo; yw];
+
+dref= m_lldist(xr,yr); %0.3660 km; 
+[s,a12,a21]=m_idist(xo,yo,xw,yw); 
+theta= mod(450-a12,360); %40.3230
+
+%% save
+% save BI_reference_line_L4.mat 'xo' 'yo' 'xw' 'yw' 
