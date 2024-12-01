@@ -1,0 +1,161 @@
+%% No2b_reference_line.m
+% Another visual to determine which theta to use
+% Useful for lines in parallel (BI, and the two lines in LEI)
+% Finds the midpoint of each extrapolated line and creates new endpoints
+% using uniform theta (in this case theta from line 2).
+
+% interim files saved (not needed to carry forward)
+% BI_L#_viz2.mat 'lonxos' 'latyos' 'lonxws' 'latyws'
+
+
+%% Determine midpoint
+
+l1= load('BI_reference_line_L1_interim2.mat');
+l2= load('BI_reference_line_L2.mat');
+l3= load('BI_reference_line_L3_interim2.mat');
+l4= load('BI_reference_line_L4_interim2.mat');
+
+m_proj('get') 
+m_proj('UTM', 'lon<gitude>',[-75 -74], 'lat<itude>',[39 40], 'zon<e>', 18, 'hem<isphere>', [0], 'ell<ipsoid>', 'wgs84', 'rectbox', 'on');
+
+% l1
+l1.lonr= [l1.xo, l1.xw];
+l1.latr= [l1.yo, l1.yw];
+[l1.x,l1.y]= m_ll2xy(l1.lonr, l1.latr, 'clip', 'off'); %lat lon to xy
+l1.xmid= (l1.x(:,1)+l1.x(:,2))/2;
+l1.ymid= (l1.y(:,1)+l1.y(:,2))/2;
+
+figure('color','w')
+plot(l1.x, l1.y, 'k-.')
+hold on
+plot(l1.xmid,l1.ymid,'r.')
+
+% l2
+l2.lonr= [l2.xo, l2.xw];
+l2.latr= [l2.yo, l2.yw];
+[l2.x,l2.y]= m_ll2xy(l2.lonr, l2.latr, 'clip', 'off');
+l2.xmid= (l2.x(:,1)+l2.x(:,2))/2;
+l2.ymid= (l2.y(:,1)+l2.y(:,2))/2;
+
+plot(l2.x, l2.y, 'k-')
+hold on
+plot(l2.xmid,l2.ymid,'r.')
+
+% l3
+l3.lonr= [l3.xo, l3.xw];
+l3.latr= [l3.yo, l3.yw];
+[l3.x,l3.y]= m_ll2xy(l3.lonr, l3.latr, 'clip', 'off');
+l3.xmid= (l3.x(:,1)+l3.x(:,2))/2;
+l3.ymid= (l3.y(:,1)+l3.y(:,2))/2;
+
+plot(l3.x, l3.y, 'k-.')
+hold on
+plot(l3.xmid,l3.ymid,'r.')
+
+% l4
+l4.lonr= [l4.xo, l4.xw];
+l4.latr= [l4.yo, l4.yw];
+[l4.x,l4.y]= m_ll2xy(l4.lonr, l4.latr, 'clip', 'off');
+l4.xmid= (l4.x(:,1)+l4.x(:,2))/2;
+l4.ymid= (l4.y(:,1)+l4.y(:,2))/2;
+
+plot(l4.x, l4.y, 'k-.')
+hold on
+plot(l4.xmid,l4.ymid,'r.')
+
+%% L2 for theta to apply for rest of lines
+l2.xref=[l2.xo,l2.xw];
+l2.yref=[l2.yo,l2.yw];
+l2.dref= m_lldist(l2.xref,l2.yref); 
+[l2.s,l2.a12,l2.a21]=m_idist(l2.xo,l2.yo,l2.xw,l2.yw); 
+l2.theta= mod(450-l2.a12,360); 
+
+%% L1 
+% l1.xref=[l1.xo,l1.xw];
+% l1.yref=[l1.yo,l1.yw];
+% l1.dref= m_lldist(l1.xref,l1.yref); 
+% [l1.s,l1.a12,l1.a21]=m_idist(l1.xo,l1.yo,l1.xw,l1.yw); 
+% l1.theta0= mod(450-l1.a12,360); 
+
+%find distance from midpoint to 100m away along extrapolated reference
+%line.
+l1.x2= l1.xmid + 100;
+l1.dy= 100 * tand(l2.theta); %see dwg for visual
+l1.y2= l1.ymid + l1.dy;
+
+l1.refintx= [l1.xmid, l1.x2];
+l1.refinty= [l1.ymid, l1.y2];
+
+plot(l1.refintx, l1.refinty, 'k-')
+hold on
+% plot(l1.x, l1.y, 'k-.')
+plot(l1.xmid,l1.ymid,'r.')
+plot(l1.x2,l1.y2,'b.')
+
+% L3
+l3.x2= l3.xmid + 100;
+l3.dy= 100 * tand(l2.theta);
+l3.y2= l3.ymid + l3.dy;
+
+l3.refintx= [l3.xmid, l3.x2];
+l3.refinty= [l3.ymid, l3.y2];
+
+plot(l3.refintx, l3.refinty, 'k-')
+hold on
+plot(l3.xmid,l3.ymid,'r.')
+plot(l3.x2,l3.y2,'b.')
+
+% L4
+l4.x2= l4.xmid + 100;
+l4.dy= 100 * tand(l2.theta);
+l4.y2= l4.ymid + l4.dy;
+
+l4.refintx= [l4.xmid, l4.x2];
+l4.refinty= [l4.ymid, l4.y2];
+
+plot(l4.refintx, l4.refinty, 'k-')
+hold on
+plot(l4.xmid,l4.ymid,'r.')
+plot(l4.x2,l4.y2,'b.')
+
+%% convert to lat/lon 
+%l1
+[l1.lonr_s,l1.latr_s]=m_xy2ll(l1.refintx, l1.refinty);
+
+l1.lonxos = l1.lonr_s(1); 
+l1.latyos = l1.latr_s(1);
+
+l1.lonxws = l1.lonr_s(2); 
+l1.latyws = l1.latr_s(2);
+
+%l3
+[l3.lonr_s,l3.latr_s]=m_xy2ll(l3.refintx, l3.refinty);
+
+l3.lonxos = l3.lonr_s(1); 
+l3.latyos = l3.latr_s(1);
+
+l3.lonxws = l3.lonr_s(2); 
+l3.latyws = l3.latr_s(2);
+
+%l4
+[l4.lonr_s,l4.latr_s]=m_xy2ll(l4.refintx, l4.refinty);
+
+l4.lonxos = l4.lonr_s(1); 
+l4.latyos = l4.latr_s(1);
+
+l4.lonxws = l4.lonr_s(2); 
+l4.latyws = l4.latr_s(2);
+
+%% saves - interim 
+lonxos= l4.lonxos;
+latyos= l4.latyos;
+lonxws= l4.lonxws;
+latyws=l4.latyws;
+
+% save BI_L1_viz2.mat 'lonxos' 'latyos' 'lonxws' 'latyws'
+% save BI_L3_viz2.mat 'lonxos' 'latyos' 'lonxws' 'latyws'
+% save BI_L4_viz2.mat 'lonxos' 'latyos' 'lonxws' 'latyws'
+
+%% put these interim points in another software and visualize, extend 
+% using same method...then re run script 2 for these new points for final
+% reference line.
