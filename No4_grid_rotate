@@ -55,7 +55,9 @@ xref=[xo,xw];
 yref=[yo,yw];
 dref= m_lldist(xref,yref); 
 [s,a12,a21]=m_idist(xo,yo,xw,yw); 
-theta= mod(450-a12,360); 
+theta= mod(450-a12,360); %NOTE: we will use theta from L2 for all 4 lines 
+% in BI: 41.8552515665384
+theta = 41.8552515665384; % use for L1, L3, L4
 
 cross = u.*cos(pi*theta/180) + v.*sin(pi*theta/180); 
 along = -u.*sin(pi*theta/180) + v.*cos(pi*theta/180);
