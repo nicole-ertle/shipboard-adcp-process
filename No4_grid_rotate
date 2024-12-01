@@ -1,0 +1,66 @@
+%% No4_grid_rotate.m
+% Maps data onto grid and rotates velocities from reference line theta.
+% Deliverables: 
+% BI_adcp_L#_mmddyy_cropped_grid_rotate.mat: cross, along, projected
+% distance (of data point from the start of reference line), and distance
+% offset (of data point from the reference line).
+
+
+%% load mat files
+load BI_reference_line_L2.mat;
+load BI_adcp_L2_071323_cropped.mat;
+
+%% define common grid
+a=size(u);
+nens = a(2); %number of ensembles
+
+d_ref_east = m_lldist([xo,xw],[yo,yo]);
+if xw<xo
+    d_ref_east = -1*d_ref_east;
+end
+d_ref_north = m_lldist([xo,xo],[yo,yw]);
+if yw<yo
+    d_ref_north = -1*d_ref_north;
+end
+
+d_east= zeros(nens,1); 
+d_north= zeros(nens,1);
+for m=1:nens 
+    d_east(m)= m_lldist([xo,lon(m)],[yo,yo]); 
+    if lon(m)<xo
+        d_east(m)= -1*d_east(m);
+    end
+    d_north(m)= m_lldist([xo,xo],[yo,lat(m)]);
+    if lat(m)<yo
+        d_north(m)= -1*d_north(m);
+    end
+end
+
+%% project lat/lon onto the reference line 
+proj_distance = zeros(nens,1);
+
+for m=1:nens
+    vec_a = [d_ref_east,d_ref_north];
+    vec_b = [d_east(m),d_north(m)];
+    proj_distance(m) = dot(vec_a,vec_b)/sqrt(d_ref_east^2+d_ref_north^2);
+end
+
+% c= sqrt(d_east^2+d_north^2); 
+% b= sqrt(c^2-a^2); %b is the distance away from ref line.
+distance_offset= sqrt(sqrt(d_east.^2 + d_north.^2) - proj_distance);
+
+
+%% add geo rotation: use theta from ref line
+xref=[xo,xw];
+yref=[yo,yw];
+dref= m_lldist(xref,yref); 
+[s,a12,a21]=m_idist(xo,yo,xw,yw); 
+theta= mod(450-a12,360); 
+
+cross = u.*cos(pi*theta/180) + v.*sin(pi*theta/180); 
+along = -u.*sin(pi*theta/180) + v.*cos(pi*theta/180);
+
+%% see viz script for plot
+
+%% save
+% save BI_adcp_L2_071323_cropped_grid_rotate.mat 'cross' 'along' 'proj_distance' 'distance_offset'
