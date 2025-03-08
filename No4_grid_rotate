@@ -8,7 +8,8 @@
 
 %% load mat files
 load BI_reference_line_L2.mat;
-load BI_adcp_L2_071323_cropped.mat;
+
+load BI_adcp_L2_031824_cropped.mat;
 
 %% define common grid
 a=size(u);
@@ -55,14 +56,43 @@ xref=[xo,xw];
 yref=[yo,yw];
 dref= m_lldist(xref,yref); 
 [s,a12,a21]=m_idist(xo,yo,xw,yw); 
-theta= mod(450-a12,360); %NOTE: we will use theta from L2 for all 4 lines 
+% theta= mod(450-a12,360); %NOTE: we will use theta from L2 for all 4 lines 
 % in BI: 41.8552515665384
 theta = 41.8552515665384; % use for L1, L3, L4
 
 cross = u.*cos(pi*theta/180) + v.*sin(pi*theta/180); 
 along = -u.*sin(pi*theta/180) + v.*cos(pi*theta/180);
 
-%% see viz script for plot
+%% see viz script for plot, abridged here
+
+% check rotation/grid
+figure('color','w')
+scatter(along,cross)
+set(gca,'xlim',[-3,3],'ylim',[-3,3])
+
+%% compare specific points:
+subplot(1,2,1)
+plot(u,v,'k.')
+hold on
+plot(u(10,2942),v(10,2942),'m.') %L2 
+xlabel('Eastward velocity')
+ylabel('Northward velocity')
+title('Earth coordinates')
+% set(gca,'xlim',[-2,2],'ylim',[-2,2])
+set(gca,'xlim',[-3,3],'ylim',[-3,3])
+axis square
+grid on
+subplot(1,2,2)
+plot(cross,along,'k.')
+hold on
+plot(cross(10,2942),along(10,2942),'m.') %L2 
+xlabel('Cross Channel velocity')
+ylabel('Along Channel velocity')
+title('Rotated')
+% set(gca,'xlim',[-2,2],'ylim',[-2,2])
+set(gca,'xlim',[-3,3],'ylim',[-3,3])
+axis square
+grid on
 
 %% save
-% save BI_adcp_L2_071323_cropped_grid_rotate.mat 'cross' 'along' 'proj_distance' 'distance_offset'
+% save BI_adcp_L2_031524_cropped_grid_rotate.mat 'cross' 'along' 'proj_distance' 'distance_offset'
