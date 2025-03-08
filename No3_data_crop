@@ -89,8 +89,8 @@ lat = all.lat(idx);
 lon = all.lon(idx); 
 depth= all.depth(idx);
 
-%% save *later - save bin once confirmed accurate
-% save BI_adcp_L4_031824_cropped.mat 'lat' 'lon' 'time' 'u' 'v' 'depth' 'idx' %'bins'
+%% save 
+% save BI_adcp_L4_031824_cropped.mat 'lat' 'lon' 'time' 'u' 'v' 'depth' 'idx'
 
 %% NEXT
 % map grid and rotate
