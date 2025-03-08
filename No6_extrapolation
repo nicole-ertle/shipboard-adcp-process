@@ -1,0 +1,679 @@
+% No6_extrapolation.m
+% IN PROGRESS
+% Creates extrapolated matrices from surface (0) to bottom in 0.25m
+% increments.
+% Removes vel data exceeding water depth.
+% Fills in measured data to extrap matrix and performs surface
+% extrapolation (0slope at surface, constant options) and bottom
+% extrapolation (log, lin options).
+
+% extrap: constant, and 0slope where constant applied to short profiles.
+% linear and log where linear applied when log wasn't, exception of xx=10,
+% n=10 which had no extrap.
+% unclear if it's only because of the single "if" parameter (d2>0) that log
+% extrap is not being applied to those profiles..see the section.
+
+%sigma coords, the spaces near the bottom resolved with adding the linear
+%extrap; even if 15 levels are used.
+
+%plot all profiles (extrap, and sigma)
+
+%% load survey data, single line
+
+load BI_adcp_L2_031524_cropped_grid_rotate_binavg.mat
+% load BI_adcp_L2_062823_cropped_grid_rotate_binavg.mat
+
+%% set up matrices 
+dz= 0.25;
+z = 0:dz:33; %32.5 deepest
+along_extrap = NaN(length(z),length(X),size(along_binavg,3)); 
+cross_extrap = NaN(length(z),length(X),size(along_binavg,3)); 
+
+% find indices of first and last bins with data
+for xx = 1:size(along_binavg,3)
+    idx_start_interp(:,:,xx) = find(~isnan(h_binavg(:,:,xx)),1,'first');
+    idx_end_interp(:,:,xx) = find(~isnan(h_binavg(:,:,xx)),1,'last');
+end
+
+%% remove data (velocity bins) that exceed the water depth 
+
+for xx = 1:size(along_binavg, 3)
+    h_xx = h_binavg(:,:,xx);
+    along_xx = along_binavg(:,:,xx);
+    for n = idx_start_interp(xx):idx_end_interp(xx)
+        height_int = h_xx(n) - bins;
+        height(:, n, xx) = height_int;
+        neg_int = find(height_int <= 0);
+        neg(:, n, xx) = height_int <= 0; 
+        height_int(neg_int) = NaN;
+        along_xx(neg_int, n) = NaN;
+    end
+    along_binavg(:,:,xx) = along_xx;
+end
+
+%% continue setting up matrices
+% cells arranged from shallowest to deepest; 
+% find first & last bins with good data
+
+fgb_int = NaN(1,length(h_binavg),size(along_binavg,3));
+lgb_int = NaN(1,length(h_binavg),size(along_binavg,3));
+
+for xx = 1:size(along_binavg, 3)
+for n=idx_start_interp(xx):idx_end_interp(xx)
+    a=find(~isnan(along_binavg(:,n,xx)),1,'first'); 
+    if isempty(a)
+        fgb_int(:,n,xx)=NaN;
+    else
+        fgb_int(:,n,xx)=a;
+    end
+    b=find(~isnan(along_binavg(:,n,xx)),1,'last');
+    if isempty(b)
+        lgb_int(:,n,xx)=NaN;
+        continue
+    else
+        lgb_int(:,n,xx)=b;
+    end
+end
+end
+
+%% redefine indices
+
+for xx = 1:size(along_binavg, 3)
+idx_e= find(~isnan(lgb_int(:,:,xx)),1,'last');
+idx_end_interp(:,:,xx)= idx_e; %last real bin of data after NaNs
+
+idx_s=find(~isnan(fgb_int(:,:,xx)),1,'first');
+idx_start_interp(:,:,xx)= idx_s;
+end
+
+%% Fill in middle using measured data
+%incorporating 0.25m vertical increments
+
+for xx = 1:size(along_binavg, 3)
+for n=idx_start_interp(xx):idx_end_interp(xx)
+    if ~isnan(fgb_int(:,n,xx))        
+    b = find(z >= bins(fgb_int(:,n,xx)) & z<= bins(lgb_int(:,n,xx))); 
+    %find where depth > first good data in bins, and < last good data in bins
+    along_mid = interp1(bins(fgb_int(:,n,xx):lgb_int(:,n,xx)), ...
+        along_binavg(fgb_int(:,n,xx):lgb_int(:,n,xx),n,xx),z(b));
+    % cross_mid = interp1(bins(fgb_int(:,n,xx):lgb_int(:,n,xx)), ...
+    %     cross_binavg(fgb_int(:,n,xx):lgb_int(:,n,xx),n,xx),z(b));
+        along_extrap(b,n,xx) = along_mid;
+        %cross_extrap(b,n,xx) = cross_mid;
+    end
+end
+end
+
+along_mid = along_extrap;
+cross_mid = cross_extrap;
+
+%% plot bin-avg and extrap bin-avg:
+
+% for xx = 1:size(along_binavg,3)
+% figure('color', 'white')
+% subplot(2,1,1)
+% pcolor(X,bins,along_binavg(:,:,xx))
+% hold on
+% plot(X,h_binavg(:,:,xx),'k','LineWidth',2)
+% shading interp; 
+% cb=colorbar; ylabel(cb,'along channel velocity (m/s)')
+% caxis([-1,1])
+% ax=gca;
+% set(gca,'xlim',[0,max(X)])
+% ax.YDir='reverse';
+% ax.YLim=[0,16];
+% colormap(redblue)
+% xlabel('Projected Distance (km)')
+% ylabel('Depth')
+% title('along (bin-avg), orig')
+% 
+% subplot(2,1,2)
+% pcolor(X,z,along_extrap(:,:,xx))
+% hold on
+% plot(X,h_binavg(:,:,xx),'k','LineWidth',2)
+% shading interp; 
+% cb=colorbar; ylabel(cb,'along channel velocity (m/s)')
+% caxis([-1,1])
+% ax=gca;
+% set(gca,'xlim',[0,max(X)])
+% ax.YDir='reverse';
+% ax.YLim=[0,16];
+% colormap(redblue)
+% xlabel('Projected Distance (km)')
+% ylabel('Depth')
+% title('along (bin-avg), extrap')
+% sgtitle(strcat('Transect =', num2str(xx)));
+% end
+
+%% surface extrapolation: constant 
+% copies the top most bin of data to surface...even short profiles
+
+along_extrap_constant= along_extrap;
+cross_extrap_constant= cross_extrap;
+
+for xx = 1:size(along_binavg, 3) 
+for n=idx_start_interp(xx):idx_end_interp(xx)
+
+d= find(~isnan(along_extrap_constant(:,n,xx)),1,'first');  
+along_extrap_constant(1:d-1,n,xx)= along_extrap_constant(d,n,xx); 
+
+d= find(~isnan(cross_extrap_constant(:,n,xx)),1,'first');  
+cross_extrap_constant(1:d-1,n,xx)= cross_extrap_constant(d,n,xx);
+end
+end
+
+
+%% surface extrapolation:Fit parabola to shallowest meter 
+% (four data points), requiring zero slope at surface using optimization 
+% (see parabola_fit_example_zero_slope.m)
+
+for xx = 1:size(along_binavg, 3) 
+for n=idx_start_interp(xx):idx_end_interp(xx)
+
+    %starting index:
+    start_idx = fgb_int(:, n, xx); 
+
+    %check if at least 5 data point avail:
+        if start_idx + 4 > numel(bins)
+            fprintf('Profile n=%d in transect xx=%d skipped: not enough data points.\n', n, xx);
+            continue
+        end
+        if isnan(start_idx) 
+            fprintf('Profile n=%d in transect xx=%d skipped: invalid start index (%g).\n', n, xx, start_idx);
+            continue;
+        end
+
+    %skip short profiles
+        a = find(~isnan(along_binavg(:,n,xx)), 1, 'first');  
+        if isempty(a)
+            fgb_int(:, n, xx) = NaN;
+        else
+            fgb_int(:, n, xx) = a;
+        end
+
+        b = find(~isnan(along_binavg(:,n,xx)), 1, 'last');
+        if isempty(b)
+            lgb_int(:, n, xx) = NaN;
+        elseif b <= 5   
+            fprintf('Profile n=%d in transect xx=%d skipped from extrapolation (not enough bins).\n', n, xx);
+            continue  
+        else
+            lgb_int(:, n, xx) = b;
+        end
+
+    x_data = bins(fgb_int(:,n,xx):fgb_int(:,n,xx)+3); 
+    v_data = along_binavg(fgb_int(:,n,xx):fgb_int(:,n,xx)+3,n,xx); 
+
+    % Define the optimization problem
+    fun = @(coeff) sum((coeff(1) * x_data.^2 + coeff(2) * x_data + coeff(3) - v_data).^2,'all');
+    initial_guess = [1, 1, 1]; % Initial guess for coefficients [a, b, c]
+
+    % Constraint: b (coeff(2)) should be 0
+    A = [0, 1, 0]; % Coefficient matrix for linear inequality constraint
+    b = 0; % Right-hand side of the constraint
+
+    % Options for optimization
+    options = optimset('fmincon');
+    % options.Display = 'iter' % Display optimization progress
+
+    % Perform constrained optimization
+    coefficients = NaN(1,3);
+    coefficients = fmincon(fun, initial_guess, [], [], A, b, [], [], [], options);
+    
+    % Extract optimized coefficients
+    a_v(:,n,xx) = coefficients(1);
+    b_v(:,n,xx) = coefficients(2);
+    c_v(:,n,xx) = coefficients(3);
+
+    %calculate surface points
+    d = find(z <= bins(fgb_int(:,n,xx)));
+    z_surf = z(d);
+    v_surf = a_v(:,n,xx) * z_surf.^2 + b_v(:,n,xx) * z_surf + c_v(:,n,xx); %same # which is the c_v coefficient3
+
+    %fill in to extrap matrices
+    along_extrap(d,n,xx)=v_surf; 
+end
+end
+
+% constant extrap to short profiles:
+for xx = 1:size(along_binavg, 3) 
+for n=idx_start_interp(xx):idx_end_interp(xx)
+
+    % starting index:
+    start_idx = fgb_int(:, n, xx); 
+        if isnan(start_idx) 
+            fprintf('Profile n=%d in transect xx=%d skipped: invalid start index (%g).\n', n, xx, start_idx);
+            continue;
+        end
+    % skip long profiles
+        a = find(~isnan(along_binavg(:,n,xx)), 1, 'first');  
+        if isempty(a)
+            fgb_int(:, n, xx) = NaN;
+        else
+            fgb_int(:, n, xx) = a;
+        end
+        b = find(~isnan(along_binavg(:,n,xx)), 1, 'last');
+        if isempty(b)
+            lgb_int(:, n, xx) = NaN;
+        elseif b > 5   
+            fprintf('Profile n=%d in transect xx=%d skipped from CONSTANT extrapolation.\n', n, xx);
+            continue  
+        else
+            lgb_int(:, n, xx) = b;
+        end
+            d= find(~isnan(along_extrap(:,n,xx)),1,'first');  
+            along_extrap(1:d-1,n,xx)= along_extrap(d,n,xx);
+            d= find(~isnan(cross_extrap(:,n,xx)),1,'first');  
+            cross_extrap(1:d-1,n,xx)= cross_extrap(d,n,xx);
+end
+end
+
+%% plot the difference between two surface extraps
+% %small
+% 
+% dv= along_extrap_constant - along_extrap;
+% test_con= along_extrap_constant(:,:,1);
+% test_opt= along_extrap(:,:,1);
+% dv1=dv(:,:,1);
+% 
+% dv_opt_ext = along_extrap - along_extrap_constant;
+% dvoptext1=dv_opt_ext(:,:,1);
+% % figure
+% xx=11; 
+% % Select 10 index numbers for vertical profiles
+% profiles = 1:10;
+% % profiles = 9:18;
+% % profiles = 20:29;
+% % profiles = 22;
+% % profiles = 30:39;
+% % profiles = 40:49;
+% % profiles = 50:59;
+% % profiles = 60:69;
+% % profiles = 70:79;
+% % profiles = 80:89;
+% % profiles = 90:99;
+% % profiles = 100:109;
+% 
+% figure('color','w')
+% for p = 1:10
+%     subplot(2,5,p)
+%     plot(dv_opt_ext(:,profiles(p),xx),z,'ko:')
+%     hold on
+%     % plot(along_binavg(:,profiles(p),xx),bins,'b*-')
+%     % plot(0,h_binavg(:,profiles(p),xx),'ks','markerfacecolor','k')
+%     set(gca,'YDir','reverse','XAxisLocation','top')
+%     ylabel('Depth (m)')
+%     % xlabel('Alongchannel velocity (m/s)')
+%     title(strcat('profile = ',num2str(profiles(p))))
+% end
+% 
+
+%% x sec
+% for xx = 1:size(along_binavg,3)
+% figure('color', 'white')
+% subplot(2,1,1)
+% pcolor(X,z,along_extrap_constant(:,:,xx))
+% hold on
+% plot(X,h_binavg(:,:,xx),'k','LineWidth',2)
+% shading interp; 
+% cb=colorbar; ylabel(cb,'along channel velocity (m/s)')
+% caxis([-1.5,1.6])
+% ax=gca;
+% set(gca,'xlim',[0,max(X)])
+% ax.YDir='reverse';
+% ax.YLim=[0,16];
+% colormap(redblue)
+% xlabel('Projected Distance (km)')
+% ylabel('Depth')
+% title('constant extrap')
+% 
+% subplot(2,1,2)
+% pcolor(X,z,along_extrap(:,:,xx))
+% hold on
+% plot(X,h_binavg(:,:,xx),'k','LineWidth',2)
+% shading interp; 
+% cb=colorbar; ylabel(cb,'along channel velocity (m/s)')
+% caxis([-1.5,1.5])
+% ax=gca;
+% set(gca,'xlim',[0,max(X)])
+% ax.YDir='reverse';
+% ax.YLim=[0,16];
+% colormap(redblue)
+% xlabel('Projected Distance (km)')
+% ylabel('Depth')
+% title('4 pt optimization extrap / constant')
+% sgtitle(strcat('Transect =', num2str(xx)));
+% end
+%% vertical profile figures
+% xx=10; 
+% % Select 10 index numbers for vertical profiles
+% profiles = 1:10;
+% % profiles = 9:18;
+% % profiles = 20:29;
+% % profiles = 22;
+% % profiles = 30:39;
+% % profiles = 40:49;
+% % profiles = 50:59;
+% % profiles = 60:69;
+% % profiles = 70:79;
+% % profiles = 80:89;
+% % profiles = 90:99;
+% % profiles = 100:109;
+% 
+% figure('color','w')
+% for p = 1:10
+%     subplot(2,5,p)
+%     plot(along_extrap_copy(:,profiles(p),xx),z,'ko:')
+%     hold on
+%     plot(along_extrap(:,profiles(p),xx),z,'r.')
+%     plot(along_binavg(:,profiles(p),xx),bins,'b*-')
+%     plot(0,h_binavg(:,profiles(p),xx),'ks','markerfacecolor','k')
+%     set(gca,'YDir','reverse','XAxisLocation','top')
+%     ylabel('Depth (m)')
+%     xlabel('Alongchannel velocity (m/s)')
+%     title(strcat('profile = ',num2str(profiles(p))))
+% end
+
+%% bottom extrap: linear
+% a10sc= along_extrap_constant(:,:,10);
+% h10ba= h_binavg(:,:,10);
+% xx=10;n=10; %14=14, 
+% z= 3.25 <= h=3.4983
+
+z=z';
+
+for xx = 1:size(along_binavg, 3) 
+for n=idx_start_interp(xx):idx_end_interp(xx)
+
+    a= find(~isnan(along_extrap_constant(:,n,xx)),1,'last');  
+    b= find(z <= h_binavg(:,n,xx),1,'last');
+
+    if b>a
+        test= interp1([z(a,1) h_binavg(:,n,xx)],[along_extrap_constant(a,n,xx) 0],[z(a+1:b)]);
+        along_extrap_constant(a+1:b,n,xx)= test(:);
+    else if b==a %this is not doing anything really
+        test2= interp1([z(a,1) h_binavg(:,n,xx)],[along_extrap_constant(a,n,xx) 0],[z(a+1:b+1)]);
+        along_extrap_constant(a+1:b+1,n,xx)= test2(:);
+    fprintf('Profile n=%d in transect xx=%d skipped.\n', n, xx);
+    end
+   end
+    
+end
+end
+
+a10b=along_extrap_constant(:,:,10);
+
+% xx=1;
+% n=4;
+
+%% Bottom extrapolation: Fit logarithmic profile to bottom 
+% requires curve-fitting toolbox
+
+%make a copy to compare
+along_extrap_copy = along_extrap;
+
+%**CHECK UNITS OF roughness length = 0.067 (is this in meters?)*
+
+fit_params = fittype('a*log(x/0.067)','dependent',{'y'},'independent',{'x'},'coefficients',{'a'});
+
+for xx= 1:size(along_binavg, 3)
+for n=idx_start_interp(xx):idx_end_interp(xx)
+    height2 = h_binavg(:,n,xx)-bins;
+    b=find(height2<=2 & height2>=0.1); %select cells btwn 0.25 & 2 m of bottom > added the 0.25m...
+    if b>=lgb_int(n) %**test removing
+        x2=height2(lgb_int(n)-2:lgb_int(n))';
+        v2=along_binavg(lgb_int(:,n,xx)-2:lgb_int(:,n,xx),n,xx);
+        % u2=cross_binavg(lgb_int(:,n,xx)-2:lgb_int(:,n,xx),n,xx);
+    else
+        x2=height2(b:lgb_int(:,n,xx))';
+        v2=along_binavg(b:lgb_int(:,n,xx),n,xx);
+        % u2=cross_binavg(b:lgb_int(:,n,xx),n,xx);
+    end
+
+    coeff_v = fit(x2,v2,fit_params,'start',0);
+    % coeff_u = fit(x2,u2,fit_params,'start',0);
+
+    %Select near-bottom cells to fill in (at least 0.1 m above bottom to avoid overshooting 0)
+    % dd1= find(z>=bins(lgb_int(n))); 
+    % dd2= find(z<= h_binavg(:,n,xx)-0.1);
+
+    d2=find(z>=bins(lgb_int(:,n,xx)) & z<=h_binavg(:,n,xx)-0.1); 
+    if ~isempty(d2)%? same?
+        height_extrap = h_binavg(:,n,xx)-z;
+        h = height_extrap(d2);
+        v_bott = coeff_v.a.*log(h./0.067);
+        % u_bott = coeff_u.a.*log(h./0.067);
+
+        %fill in to extrap matrices
+        along_extrap(d2,n,xx)=v_bott;
+        % cross_extrap(d2,n)=u_bott;
+
+        %Fill in deepest bin above bottom if needed **************can I
+        %move this below???
+        if h(end)>dz 
+            v_bott2 = interp1([h(end),0],[v_bott(end),0],dz);
+            % u_bott2 = interp1([h(end),0],[u_bott(end),0],dz);
+            along_extrap(d2(end)+1,n,xx) = v_bott2;
+            % cross_extrap(d2(end)+1,n,xx) = u_bott2;
+        end
+    else%if d2<=0 %this doesn't produce a printed statement....
+        fprintf('Profile n=%d in transect xx=%d skipped from LOG extrapolation.\n', n, xx);
+        
+        a= find(~isnan(along_extrap(:,n,xx)),1,'last');  
+        b= find(z <= h_binavg(:,n,xx),1,'last');
+
+        if b>a
+        fprintf('Profile n=%d in transect xx=%d used LINEAR extrap.\n', n, xx);
+        test= interp1([z(a,1) h_binavg(:,n,xx)],[along_extrap(a,n,xx) 0],[z(a+1:b)]);
+        along_extrap(a+1:b,n,xx)= test(:);
+        else if b==a %this is not doing anything really
+                %can I add here to use lgb+1?
+        % test2= interp1([z(a,1) h_binavg(:,n,xx)],[along_extrap(a,n,xx) 0],[z(a+1:b+1)]);
+        % along_extrap(a+1:b+1,n,xx)= test2(:);
+        fprintf('Profile n=%d in transect xx=%d skipped from CONSTANT extrap.\n', n, xx);
+    end
+        end     
+        % continue
+    end
+
+end
+end
+%xx=10,n=10 is not extrapolated at all.
+
+%% plot all profiles for: ***loop through ALL
+%1) constant (surface) and linear (bottom) extrapolation
+%2) polynomial- 0slope (surface) and logarithmic (bottom) extrapolation
+
+xx=10;
+% Select 10 index numbers for vertical profiles
+profiles = 1:10;
+% profiles = 9:18;
+% profiles = 20:29;
+% profiles = 22;
+% profiles = 30:39;
+% profiles = 40:49;
+% profiles = 50:59;
+% profiles = 60:69;
+% profiles = 70:79;
+% profiles = 80:89;
+% profiles = 90:99;
+% profiles = 100:109;
+
+figure('color','w')
+for p = 1:10
+    subplot(2,5,p)
+    plot(along_extrap(:,profiles(p),xx),z,'mo:')
+    hold on
+    plot(along_extrap_constant(:,profiles(p),xx),z,'g.:')
+    plot(along_binavg(:,profiles(p),xx),bins,'b*-')
+    plot(0,h_binavg(:,profiles(p),xx),'ks','markerfacecolor','k')
+    set(gca,'YDir','reverse','XAxisLocation','top')
+    ylabel('Depth (m)')
+    xlabel('Alongchannel velocity (m/s)')
+    title(strcat('profile = ',num2str(profiles(p))))
+    % legend('poly/log','constant/lin','data','H','Location','best')
+end
+
+%% Plot all profiles OG
+
+profile_plot_on = 1;
+
+xx=1;
+
+if profile_plot_on
+    % for xx=1:size(along_binavg, 3)
+    Nfig = length(idx_start_interp(xx):10:idx_end_interp(xx));
+
+    P = cell(Nfig,1);
+    s=idx_start_interp(xx);
+    for n=1:Nfig-1
+        P{n}=s:s+9;
+        s=s+10;
+    end
+    P{n+1}=s:idx_end_interp(xx);
+
+    for f=1:Nfig
+        figure('color','w')
+        for p = 1:length(P{f}(:))
+            subplot(2,5,p)
+            hold on
+            plot(along_extrap(:,profiles(p),xx),z,'mo:')
+            plot(along_extrap_constant(:,profiles(p),xx),z,'g.:')
+            plot(along_binavg(:,profiles(p),xx),bins,'b*-')
+            plot(0,h_binavg(:,P{f}(p),xx),'ks','markerfacecolor','k')
+            set(gca,'YDir','reverse','XAxisLocation','top')
+            ylabel('Depth (m)')
+            xlabel('Alongchannel velocity (m/s)')
+            title(strcat('profile = ',num2str(P{f}(p))))
+        end
+        % legend('poly/log','constant/lin','data','H','Location','best')
+    end
+end
+% end
+
+
+%% Convert depth to sigma coordinates
+
+N_levels = 10; %number of vertical levels
+sigma_levels = linspace(1,0,N_levels);
+along_sigma = NaN(N_levels,width(along_extrap),size(along_binavg,3));
+cross_sigma = NaN(N_levels,width(cross_extrap),size(along_binavg,3));
+
+for xx= 1:size(along_binavg,3)
+for n=idx_start_interp(xx):idx_end_interp(xx)
+    sig = (h_binavg(:,n,xx)-z)/h_binavg(:,n,xx);
+    d = find(sig>0);
+    % vel_u = interp1(sig(d),cross_extrap(d,n,xx),sigma_levels,'linear','extrap');
+    vel_v = interp1(sig(d),along_extrap(d,n,xx),sigma_levels,'linear','extrap');
+    vel_v(end)=0; %seafloor
+    % vel_u(end)=0; 
+    vel_v(1)=along_extrap(1,n,xx);
+    % vel_u(1)=cross_extrap(1,n,xx); %surface
+
+    % cross_sigma(:,n)=vel_u(:);
+    along_sigma(:,n,xx)=vel_v(:);
+end
+end
+
+%% sig plots adjust
+% sig_plot_on = 1;
+% 
+% xx=1;
+% if sig_plot_on
+%     Nfig = length(idx_start_interp(xx):10:idx_end_interp(xx));
+% 
+%     P = cell(Nfig,1);
+%     s=idx_start_interp(xx);
+%     for n=1:Nfig-1
+%         P{n}=s:s+9;
+%         s=s+10;
+%     end
+%     P{n+1}=s:idx_end_interp(xx);
+% 
+%     for f=1:Nfig
+%         figure
+%         for p = 1:length(P{f}(:))
+%             subplot(2,5,p)
+%             hold on
+% 
+%             d = find(sig>=0);
+%             plot(along_extrap(d,P{f}(p)),sig(d),'ko-')
+%             plot(along_sigma(:,P{f}(p)),sigma_levels,'r*:')
+%             set(gca,'XAxisLocation','top')
+%             ylabel('Depth (m)')
+%             xlabel('Alongchannel velocity (cm/s)')
+%             title(strcat('profile = ',num2str(P{f}(p))))
+%         end
+%     end
+% end
+
+
+%% og
+
+% sig_plot_on = 1;
+% 
+% if sig_plot_on
+%     Nfig = length(idx_start_interp:10:idx_end_interp);
+% 
+%     P = cell(Nfig,1);
+%     s=idx_start_interp;
+%     for n=1:Nfig-1
+%         P{n}=s:s+9;
+%         s=s+10;
+%     end
+%     P{n+1}=s:idx_end_interp;
+% 
+%     for f=1:Nfig
+%         figure
+%         for p = 1:length(P{f}(:))
+%             subplot(2,5,p)
+%             hold on
+%             sig = (transect.h_binavg(P{f}(p))-cell_depth_extrap)/transect.h_binavg(P{f}(p));
+%             d = find(sig>=0);
+%             plot(vel_alongchannel_extrap(d,P{f}(p)),sig(d),'ko-')
+%             plot(vel_alongchannel_sigma(:,P{f}(p)),sigma_levels,'r*:')
+%             set(gca,'XAxisLocation','top')
+%             ylabel('Depth (m)')
+%             xlabel('Alongchannel velocity (cm/s)')
+%             title(strcat('profile = ',num2str(P{f}(p))))
+%         end
+%     end
+% end
+%% x sec figs
+
+for xx = 1:size(along_binavg,3)
+figure('color','w')
+subplot(2,1,1)
+pcolor(X,z,along_extrap(:,:,xx))
+hold on
+plot(X,h_binavg(:,:,xx),'k','linewidth',2)
+shading flat
+cb = colorbar; ylabel(cb,'along-channel velocity (m/s)')
+caxis([-1.5,1.5])
+ax=gca;
+set(gca,'YDir','reverse','YLim',[0,16])
+set(gca,'xlim',[0,max(X)])
+colormap(redblue)
+xlabel('Distance (km)')
+ylabel('Depth (m)')
+title('Final Velocity')
+
+subplot(2,1,2) 
+pcolor(X,sigma_levels,along_sigma(:,:,xx))
+cb = colorbar; ylabel(cb,'along-channel velocity (m/s)')
+colormap(redblue)
+caxis([-1.5,1.5])
+xlabel('Distance (km)')
+ylabel('Depth (m)')
+shading interp
+title('Sigma Coords')
+sgtitle(strcat('Transect =', num2str(xx)));
+end
+
+
+%% SAVE variables**
+
+%along_extrap, along_extrap_constant, z, idx_start_interp, idx_end_interp, 
+% height_extrap, cross_extrap, cross_extrap_constant, sigma_levels,
+% along_sigma, cross_sigma, 
+%varis
