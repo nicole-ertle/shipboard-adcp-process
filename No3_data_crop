@@ -11,11 +11,11 @@ ncfilecoast = 'grid_bbay_v7s.nc';
 lon_coast = ncread(ncfilecoast,'lon_coast');
 lat_coast = ncread(ncfilecoast,'lat_coast');
 
-%% find data within each seperate survey
-% apr2023= find(all.time>=datenum(2023,4,20,00,00,00)&all.time<=datenum(2023,4,21,23,59,00));
-% jun2823= find(all.time>=datenum(2023,6,28,00,00,00)&all.time<=datenum(2023,6,29,23,59,00));
-% jul1323= find(all.time>=datenum(2023,7,13,00,00,00)&all.time<=datenum(2023,7,14,23,59,00));
-% mar1524= find(all.time>=datenum(2024,3,15,00,00,00)&all.time<=datenum(2024,3,16,23,59,00));
+%% find data within each seperate survey can use inbetween for logical
+apr2023= find(all.time>=datenum(2023,4,20,00,00,00)&all.time<=datenum(2023,4,21,23,59,00));
+jun2823= find(all.time>=datenum(2023,6,28,00,00,00)&all.time<=datenum(2023,6,29,23,59,00));
+jul1323= find(all.time>=datenum(2023,7,13,00,00,00)&all.time<=datenum(2023,7,14,23,59,00));
+mar1524= find(all.time>=datenum(2024,3,15,00,00,00)&all.time<=datenum(2024,3,16,23,59,00));
 mar1824= find(all.time>=datenum(2024,3,18,00,00,00)&all.time<=datenum(2024,3,19,23,59,00));
 
 % checking
@@ -41,7 +41,7 @@ ax.PlotBoxAspectRatio = [1 lat_range/lon_range 1]
 hold on
 
 %% brush data tool
-% start with one line and go through each survey.
+% start with one line and go through each survey date.
 % plotting, brushing unwanted data, replacing with nans, then brushing and
 % exporting brushed, these are our cropped lines.
 
@@ -68,9 +68,9 @@ lon_range_km = cos(lat_range)*111;
 ax.PlotBoxAspectRatio = [1 lat_range/lon_range 1]
 
 hold on
-plot(cr(:,1),cr(:,2),'r.')
-% plot(all.lon,all.lat)
-plot3(lon,lat,time,'r.')
+% plot(cr(:,1),cr(:,2),'k.-')
+plot(all.lon,all.lat)
+plot3(lon,lat,time, 'k.-')
 
 
 %% find the indices of cropped lines from time
@@ -90,7 +90,7 @@ lon = all.lon(idx);
 depth= all.depth(idx);
 
 %% save *later - save bin once confirmed accurate
-% save BI_adcp_L2_031824_cropped.mat 'lat' 'lon' 'time' 'u' 'v' 'depth' 'idx' %'bins'
+% save BI_adcp_L4_031824_cropped.mat 'lat' 'lon' 'time' 'u' 'v' 'depth' 'idx' %'bins'
 
 %% NEXT
 % map grid and rotate
