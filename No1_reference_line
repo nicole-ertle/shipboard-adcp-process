@@ -24,7 +24,7 @@ m_proj('UTM', 'lon<gitude>',[-75 -74], 'lat<itude>',[39 40], 'zon<e>', 18, 'hem<
 % coastline data
 [lon_coast_utm,lat_coast_utm]= m_ll2xy(lon_coast, lat_coast, 'clip', 'off'); %lat lon to xy
 
-% limits for plotting (BI)
+% limits for plotting
 lonlim= [-74.115,-74.085];
 latlim= [39.745, 39.775];
 [xlimp,ylimp]= m_ll2xy(lonlim, latlim, 'clip', 'off'); 
@@ -115,5 +115,5 @@ latyws = latr_s(2);
 
 %% NEXT
 % load the endpoints into software and extend if needed to create new
-% endpoints for ref line, to be fed into next script, 2b if needed, then re
+% endpoints for ref line, to be fed into next script (2), 2b if needed, then re
 % run this script.
