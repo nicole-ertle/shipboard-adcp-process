@@ -1,0 +1,403 @@
+% No5_bin_average.m
+% Separates transects (interim cell array), 
+% Creates transect number vector, used to horizontally bin average (25m)
+% data and create 3d matrices where the third dimension is the transect
+% number.
+% Deliverables: separate mat file for each line and survey date.
+% BI_adcp_L#_mmddyy_cropped_grid_rotate_binavg.mat: 
+% u_binavg, v_binavg, along_binvg, cross_binavg, time_binavg,
+% h_binavg (offset added to depth), start (starting index for each transect), 
+% last (ending index for each transect), X (bin-averaged projected distance), 
+% bins (from concatenated file, cropped to match individual survey dimensions, 
+% includes added offset).
+% Run each line / survey date separately.
+
+%% load mat files - Eli's date specific bin file
+% always load:
+load BI_bins.mat
+
+%% manually choose line
+
+% line= 1;
+% load BI_reference_line_L1.mat
+
+line= 2;
+load BI_reference_line_L2.mat
+
+% line= 3;
+% load BI_reference_line_L3.mat
+% 
+% line= 4;
+% load BI_reference_line_L4.mat
+
+%% manually choose one survey:
+% offset corresponds to water line -> ducer
+
+% date= "042023";
+% off = 0.4;
+% load BI_adcp_L2_042023_cropped_grid_rotate.mat
+% load BI_adcp_L2_042023_cropped.mat
+
+date= "062823";
+off = 0.3;
+load BI_adcp_L2_062823_cropped_grid_rotate.mat
+load BI_adcp_L2_062823_cropped.mat
+
+% date= "071323";
+% off = 0.6;
+% load BI_adcp_L2_071323_cropped_grid_rotate.mat
+% load BI_adcp_L2_071323_cropped.mat
+
+% date= "031524";
+% off = 0.6;
+% load BI_adcp_L2_031524_cropped_grid_rotate.mat
+% load BI_adcp_L2_031524_cropped.mat
+
+% date= "031824";
+% off = 0.6;
+% load BI_adcp_L2_031824_cropped_grid_rotate.mat
+% load BI_adcp_L2_031824_cropped.mat
+
+%% redefine 'bins' and 'depth' adding offset
+
+bins = bins + off;
+depth = depth + off;
+
+%% use time to find start and end indices
+
+dttime= datetime(time,'ConvertFrom','datenum'); 
+
+%can use diff instead of loop %time(2:end)-time(1:end-1) **later
+diffsec= zeros(1,length(time)-1); % one < length
+for i = 1:(length(time) - 1)
+    diffsec(i) = (time(i+1) - time(i)) * 24 * 3600; %convert to sec, bin 
+    % index corresponds to the last data point in line
+end
+% these are differences in seconds between each bin, now find difference
+
+lastm1= find(diff(diffsec) > 1000); % one < last data point for line
+lastint= lastm1+1; % last data point in line
+last= [lastint, length(time)]; % adding the final transect end
+first= lastint+1;
+start= [1, first]; % start indices of line (added one)
+
+%% separate; cell array option
+% set up cells
+
+tt = 1:length(last); % vector 1xnumber of transects
+mt = max(tt); % number of transects
+
+u_t = cell(1, mt);  
+v_t = cell(1, mt);
+time_t = cell(1, mt);
+depth_t = cell(1, mt);
+lat_t = cell(1, mt);
+lon_t = cell(1, mt);
+along_t = cell(1, mt);
+cross_t = cell(1, mt);
+proj_distance_t = cell(1, mt);
+
+for j= 1:length(start)
+    u_t{j} = u(:,start(j):last(j));
+    v_t{j} = v(:,start(j):last(j));
+    time_t{j} = time(start(j):last(j));
+    depth_t{j} = depth(start(j):last(j));
+    lat_t{j} = lat(start(j):last(j));
+    lon_t{j} = lon(start(j):last(j));
+    along_t{j} = along(:,start(j):last(j));
+    cross_t{j} = cross(:,start(j):last(j));
+    proj_distance_t{j} = proj_distance(start(j):last(j));
+end
+
+%% plot cells (all transects from survey date) on map
+
+ncfilecoast = 'grid_bbay_v7s.nc';
+lon_coast = ncread(ncfilecoast,'lon_coast');
+lat_coast = ncread(ncfilecoast,'lat_coast');
+
+% plot transects (if they need to be cropped more, return to script
+% No3_data_crop then rerun the rest of the scripts.
+figure color 'w'
+for in=1:max(tt)
+plot(lon_coast, lat_coast,'m')
+ax=gca;
+set(gca,'xlim',[-74.115,-74.085]) %BI
+ax.YLim=[39.745, 39.775]; 
+lon_range= ax.XLim(2)-ax.XLim(1);
+lat_range= ax.YLim(2)-ax.YLim(1);
+%convert to km > lat *111km ; lon is lat specific 111km*cos of lat
+lat_range_km = lat_range*111; 
+lon_range_km = cos(lat_range)*111;
+ax.PlotBoxAspectRatio = [1 lat_range/lon_range 1]
+hold on
+plot(lon_t{in},lat_t{in})
+end
+
+% % one
+% figure('color','w');
+%     pcolor(distance, wdepth, u_t{1})
+%     set(gca,'ydir','reverse')%,'YLim',[0,40])
+%     shading flat
+%     colormap(redblue)
+%     cb=colorbar; %ylabel(cb,'u velocity (m/s)')
+%     caxis([-1.5,1.5])
+%     % title(strcat('transect = ',num2str(tt(xx))))
+% 
+% 
+% figure('color','w');
+% for xx = 1:length(u_t)
+% [n_bins,n_ensemble]=size(along_t{xx});
+% distance = repmat(proj_distance_t{xx}', n_bins, 1);
+%     subplot(6,2,xx)
+%     pcolor(distance, u_t{xx})
+%     set(gca,'ydir','reverse','YLim',[0,40])
+%     shading flat
+%     colormap(redblue)
+%     cb=colorbar; %ylabel(cb,'u velocity (m/s)')
+%     caxis([-1.5,1.5])
+%     title(strcat('transect = ',num2str(tt(xx))))
+% end
+% sgtitle('u velocity (m/s)');
+
+
+%% pcolor for u, v, along, cross velocities
+
+% adjusting the rows
+pl = ceil(mt/2); %ceil round up
+% cc = ceil(sqrt(mt)); %used to accomodate # of transects, keeping it square.
+% rr = ceil(mt/cc);
+
+figure('color','w');
+for xx = 1:length(u_t)
+    subplot(pl,2,xx)
+    pcolor(u_t{xx})
+    set(gca,'ydir','reverse','YLim',[0,40])
+    shading flat
+    colormap(redblue)
+    cb=colorbar; %ylabel(cb,'u velocity (m/s)')
+    caxis([-1.5,1.5])
+    title(strcat('transect = ',num2str(tt(xx))))
+end
+sgtitle('u velocity (m/s)');
+
+figure('color','w');
+for xx = 1:length(u_t)
+    subplot(pl,2,xx)
+    pcolor(v_t{xx})
+    set(gca,'ydir','reverse','YLim',[0,40])
+    shading flat
+    colormap(redblue)
+    cb=colorbar; %ylabel(cb,'v velocity (m/s)')
+    caxis([-1.5,1.5])
+    title(strcat('transect = ',num2str(tt(xx))))
+end
+sgtitle('v velocity (m/s)');
+
+figure('color','w');
+for xx = 1:length(u_t)
+    subplot(pl,2,xx)
+    pcolor(along_t{xx})
+    set(gca,'ydir','reverse','YLim',[0,40])
+    shading flat
+    colormap(redblue)
+    cb=colorbar; %ylabel(cb,'along channel velocity (m/s)')
+    caxis([-1.5,1.5])
+    title(strcat('transect = ',num2str(tt(xx))))
+end
+sgtitle('along channel velocity (m/s)');
+
+figure('color','w');
+for xx = 1:length(u_t)
+    subplot(pl,2,xx)
+    pcolor(cross_t{xx})
+    set(gca,'ydir','reverse','YLim',[0,40])
+    shading flat
+    colormap(redblue)
+    cb=colorbar; %ylabel(cb,'cross channel velocity (m/s)')
+    caxis([-1.5,1.5])
+    title(strcat('transect = ',num2str(tt(xx))))
+end
+sgtitle('cross channel velocity (m/s)');
+
+%% transect number vector
+
+transect_num = size(time);
+for j= 1:length(start) 
+    transect_num(start(j):last(j)) = j;
+end
+
+%% horizontal grid (25m) bin averaging.
+%note: keep dref and X unique to each line.
+
+dx = 0.025; %horizontal bin size (25m)
+% x-coordinate for common grid
+% 0 should be the left bank looking up-estuary, dref should be the total
+% distance to the right bank 
+xref=[xo,xw];
+yref=[yo,yw];
+
+dref= m_lldist(xref,yref); 
+X = 0+dx/2:dx:dref-dx/2; %"proj distance bin avg"
+
+%% binning: cell array to 3d bin avg using tnv
+%this is cell array -> 3d bin avg
+transect_num = size(time);
+for j= 1:length(start) 
+    transect_num(start(j):last(j)) = j;
+end
+num_transects = max(transect_num);  % total number of transects
+%just another way to say length(start) 
+
+Nx_all = zeros(1,length(X), num_transects); %added 3rd dim
+Nx_good = zeros(1,length(X), num_transects); %**added 3rd dim
+h_binavg = NaN(1,length(X), num_transects); %0s in ts other than 1st
+u_binavg = NaN(height(u_t{1}),length(X), num_transects); 
+v_binavg = NaN(height(v_t{1}),length(X), num_transects); 
+along_binavg = NaN(height(along_t{1}),length(X), num_transects); %73x18
+cross_binavg = NaN(height(cross_t{1}),length(X), num_transects);
+time_binavg= NaN(1,length(X), num_transects);
+
+for m = 1:num_transects
+for n = 1:length(X) 
+    a = find(proj_distance_t{m}>=X(n)-dx/2 & proj_distance_t{m}<X(n)+dx/2);
+    if ~isempty(a)
+        u_binavg(:,n,m)=mean(u_t{m}(:,a),2,'omitnan');
+        v_binavg(:,n,m)=mean(v_t{m}(:,a),2,'omitnan');
+        along_binavg(:,n,m)=mean(along_t{m}(:,a),2,'omitnan');
+        cross_binavg(:,n,m)=mean(cross_t{m}(:,a),2,'omitnan');
+        time_binavg(:,n,m)=mean(time_t{m}(a),'omitnan');
+        h_binavg(:,n,m) = mean(depth_t{m}(a),'omitnan'); 
+        Nx_all(:,n,m) = length(a); %use to find number of ensembles (including bad ens.)
+        Nx_good(:,n,m) = length(find(~isnan(mean(u_t{m}(:,a),1,'omitnan')))); %check # of good velocity points
+    end
+end
+end
+
+for j = 1:mt
+    temp = transect_num == j;
+    ind = find(temp); 
+    if ~isempty(ind) 
+        disp(['Transect ', num2str(j), ': Start Index = ', num2str(min(ind)), ...
+              ', Last Index = ', num2str(max(ind))]);
+    else
+        disp(['Transect ', num2str(j), ': No data available']);
+    end
+end
+
+%% crop bins
+bins = bins(1:height(u));
+
+%% LOTS OF PLOTS
+% each transect
+% for xx = 1:size(along_binavg,3)
+%     figure('color','w');
+%     pcolor(X,bins,along_binavg(:,:,xx))
+%     set(gca,'ydir','reverse','YLim',[0,max(depth)])
+%     shading flat
+%     hold on
+%     % plot(X,h_binavg(:,:,xx),'k','linewidth',2) %this does not look great
+%     colormap(redblue)
+%     cb=colorbar; %ylabel(cb,'bin-avg along channel velocity (m/s)')
+%     caxis([-1.5,1.5])
+%     title(strcat('bin-avg along chn transect = ',num2str(tt(xx))))
+% end
+% 
+% %want  to save plot within loop
+% % export_fig('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\' ...
+% %      'fig\Bin-Avg\', sprintf('plot%d', tt), '-a1', '-pdf', '-png'));
+% % 
+% %  export_fig ['C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\' ...
+% %      'fig\Bin-Avg\L2_071323_T19.fig' %-m2
+% 
+% % all transects
+% figure('color','w');
+% for xx = 1:size(along_binavg,3)
+%     subplot(pl,2,xx)
+%     pcolor(X,bins,along_binavg(:,:,xx))
+%     set(gca,'ydir','reverse','YLim',[0,max(depth)])
+%     shading flat
+%     hold on
+%     % plot(X,h_binavg(:,:,xx),'k','linewidth',2) %this does not look great
+%     colormap(redblue)
+%     cb=colorbar; %ylabel(cb,'bin-avg along channel velocity (m/s)')
+%     caxis([-1.5,1.5])
+%     title(strcat('transect = ',num2str(tt(xx))))
+% end
+% sgtitle('bin-averaged along channel velocity (m/s)');
+
+%% Plot depth-averaged, bin-averaged velocity to check for points skewed by
+% outliers. Use bar graph to check data coverage.
+
+for xx = 1:size(along_binavg,3)
+figure('color','w')
+subplot(4,1,1)
+plot(proj_distance_t{xx},mean(u_t{xx},1,'omitnan'))
+hold on
+plot(X,mean(u_binavg(:,:,xx),1,'omitnan'),'ro--')
+ylabel('Depth-averaged u')
+title(sprintf('dx = %.1f m\n',dx*1e3))
+sgtitle(strcat('transect = ',num2str(tt(xx))))
+legend('original','bin-averaged')
+
+subplot(4,1,2)
+plot(proj_distance_t{xx},mean(v_t{xx},1,'omitnan'))
+hold on
+plot(X,mean(v_binavg(:,:,xx),1,'omitnan'),'ro--')
+ylabel('Depth-averaged v')
+% title(sprintf('dx = %.1f m\n',dx*1e3))
+
+subplot(4,1,3)
+plot(proj_distance_t{xx},depth_t{xx},'k'); hold on
+plot(X,h_binavg(:,:,xx),'m*:')
+ylabel('bin-avg depth')
+set(gca,'ydir','reverse','YLim',[0,max(depth)])
+
+subplot(4,1,4)
+bar(X,Nx_good(:,:,1))
+ylabel('Number of good ensembles per horizontal bin')
+xlabel('Projected distance')
+end
+
+%% Plot bin-averaged u and v 
+
+for xx = 1:size(along_binavg,3)
+figure('color','w')
+subplot(2,1,1)
+pcolor(X,bins,along_binavg(:,:,xx))
+hold on
+plot(X,h_binavg(:,:,xx),'k','LineWidth',2)
+shading flat; 
+cb=colorbar; ylabel(cb,'along channel velocity (m/s)')
+caxis([-1,1])
+ax=gca;
+set(gca,'xlim',[0,max(X)])
+ax.YDir='reverse';
+ax.YLim=[0,16];
+colormap(redblue)
+xlabel('Projected Distance (km)')
+ylabel('Depth')
+title('along, cropped, bin-avg')
+sgtitle(strcat('transect = ',num2str(tt(xx))))
+
+subplot(2,1,2)
+pcolor(X,bins,cross_binavg(:,:,xx))
+hold on
+plot(X,h_binavg(:,:,xx),'k','LineWidth',2)
+shading flat; 
+cb=colorbar; ylabel(cb,'cross channel velocity (m/s)')
+caxis([-1,1])
+ax=gca;
+set(gca,'xlim',[0,max(X)])
+ax.YDir='reverse';
+ax.YLim=[0,16];
+colormap(redblue)
+xlabel('Projected Distance (km)')
+ylabel('Depth')
+title('cross, cropped, bin-avg')
+end
+%% save
+% 
+% save(strcat('BI_','adcp_','L',num2str(line),'_',...
+% date,'_cropped_','grid_','rotate_','binavg','.mat'),'u_binavg',...
+% 'v_binavg','along_binavg','cross_binavg','time_binavg','h_binavg',...
+% 'start','last','X','bins')
