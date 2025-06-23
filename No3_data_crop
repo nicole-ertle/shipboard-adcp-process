@@ -1,29 +1,25 @@
 %% No3_data_crop.m
+% NSE
 % Crops u, v, depth, position, and time data by data brushing.
+
 % Deliverables:
 % BI_adcp_L#_mmddyy_cropped.mat: cropped data files ready to rotate 
 % u, v, lat, lon, time, and index values from concatenated un-cropped data.
 
-all= load('BI_adcp.mat'); %concat files from Cody
+%% load concat file
+all= load('BI_adcp.mat'); 
 
 %% coastline for reference
 ncfilecoast = 'grid_bbay_v7s.nc';
 lon_coast = ncread(ncfilecoast,'lon_coast');
 lat_coast = ncread(ncfilecoast,'lat_coast');
 
-%% find data within each seperate survey can use inbetween for logical
+%% find data within each seperate survey; can use inbetween for logical
 apr2023= find(all.time>=datenum(2023,4,20,00,00,00)&all.time<=datenum(2023,4,21,23,59,00));
 jun2823= find(all.time>=datenum(2023,6,28,00,00,00)&all.time<=datenum(2023,6,29,23,59,00));
 jul1323= find(all.time>=datenum(2023,7,13,00,00,00)&all.time<=datenum(2023,7,14,23,59,00));
 mar1524= find(all.time>=datenum(2024,3,15,00,00,00)&all.time<=datenum(2024,3,16,23,59,00));
 mar1824= find(all.time>=datenum(2024,3,18,00,00,00)&all.time<=datenum(2024,3,19,23,59,00));
-
-% checking
-% a=datetime(all.time(apr2023),'ConvertFrom','datenum');
-% b=datetime(all.time(jun2823),'ConvertFrom','datenum');
-% c=datetime(all.time(jul1323),'ConvertFrom','datenum');
-% d=datetime(all.time(mar1524),'ConvertFrom','datenum');
-% e=datetime(all.time(mar1824),'ConvertFrom','datenum');
 
 %% plot3 fig
 figure color 'w'
@@ -41,28 +37,26 @@ ax.PlotBoxAspectRatio = [1 lat_range/lon_range 1]
 hold on
 
 %% brush data tool
-% start with one line and go through each survey date.
-% plotting, brushing unwanted data, replacing with nans, then brushing and
-% exporting brushed, these are our cropped lines.
+%% start with one line and go through each survey date:
+%% plotting, brushing unwanted data, replacing with nans, then brushing and
+%% exporting brushed data. These are our cropped lines.
 
-% plot3(all.lon(apr2023),all.lat(apr2023),all.time(apr2023), 'k.-')
+plot3(all.lon(apr2023),all.lat(apr2023),all.time(apr2023), 'k.-')
 % plot3(all.lon(jun2823),all.lat(jun2823),all.time(jun2823), 'k.-')
 % plot3(all.lon(jul1323),all.lat(jul1323),all.time(jul1323), 'k.-')
 % plot3(all.lon(mar1524),all.lat(mar1524),all.time(mar1524), 'k.-')
-plot3(all.lon(mar1824),all.lat(mar1824),all.time(mar1824), 'k.-')
+% plot3(all.lon(mar1824),all.lat(mar1824),all.time(mar1824), 'k.-')
 
 %% rename
 cr= brushedData;
 
-%% test fig
+%% view cropped
 figure color 'w'
 plot(lon_coast, lat_coast,'m')
-ax=gca;
-set(gca,'xlim',[-74.115,-74.085]) %BI
+ax=gca; set(gca,'xlim',[-74.115,-74.085]) %BI
 ax.YLim=[39.745, 39.775]; 
 lon_range= ax.XLim(2)-ax.XLim(1);
 lat_range= ax.YLim(2)-ax.YLim(1);
-%convert to km > lat *111km ; lon is lat specific 111km*cos of lat
 lat_range_km = lat_range*111; 
 lon_range_km = cos(lat_range)*111;
 ax.PlotBoxAspectRatio = [1 lat_range/lon_range 1]
@@ -70,8 +64,7 @@ ax.PlotBoxAspectRatio = [1 lat_range/lon_range 1]
 hold on
 % plot(cr(:,1),cr(:,2),'k.-')
 plot(all.lon,all.lat)
-plot3(lon,lat,time, 'k.-')
-
+plot3(lon,lat,time, 'r.')
 
 %% find the indices of cropped lines from time
 a= datetime(cr(:,3),'ConvertFrom','datenum');
@@ -89,8 +82,6 @@ lat = all.lat(idx);
 lon = all.lon(idx); 
 depth= all.depth(idx);
 
-%% save 
-% save BI_adcp_L4_031824_cropped.mat 'lat' 'lon' 'time' 'u' 'v' 'depth' 'idx'
+%% save; adjust L# and Date
 
-%% NEXT
-% map grid and rotate
+% save BI_adcp_L3_071323_cropped.mat 'lat' 'lon' 'time' 'u' 'v' 'depth' 'idx'
