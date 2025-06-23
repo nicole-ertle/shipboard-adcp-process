@@ -1,4 +1,5 @@
 %% No1_reference_line.m
+% NSE
 % Determines the endpoints of reference lines for visualization...not the
 % actual ref line endpoints.
 
@@ -7,7 +8,10 @@
 % BIreference_L#_interim.mat 'slope' 'yint' 'theta' 
 % BI_L#_viz.mat 'lonxos' 'latyos' 'lonxws' 'latyws'
 
+% started adjusting for LEI
+%% load concatenated files
 load('BI_adcp.mat') %concat files from Cody
+% load('LEI_adcp.mat') 
 
 %% coastline for reference
 ncfilecoast = 'grid_bbay_v7s.nc';
@@ -25,8 +29,8 @@ m_proj('UTM', 'lon<gitude>',[-75 -74], 'lat<itude>',[39 40], 'zon<e>', 18, 'hem<
 [lon_coast_utm,lat_coast_utm]= m_ll2xy(lon_coast, lat_coast, 'clip', 'off'); %lat lon to xy
 
 % limits for plotting
-lonlim= [-74.115,-74.085];
-latlim= [39.745, 39.775];
+lonlim= [-74.115,-74.085]; latlim= [39.745, 39.775]; %BI
+
 [xlimp,ylimp]= m_ll2xy(lonlim, latlim, 'clip', 'off'); 
 
 %% plot figure and 'all' data
@@ -42,7 +46,7 @@ ax.PlotBoxAspectRatio= [1,y_range/x_range,1];
 hold on
 plot(Xall,Yall)
 
-%% ginput to select polygon OR load file name
+%% ginput to select polygon OR load file name when poly already created (BI)
 
 fname= input('Enter the polygon file name with extension (or type "no" to use ginput): ', 's');
 
@@ -109,11 +113,11 @@ lonxws = lonr_s(2);
 latyws = latr_s(2);
 
 %% saves - interim *can protect inside a statement*
-% save BI_poly_L4.mat 'lonp' 'latp' 'xp' 'yp'
-% save BIreference_L4_interim.mat 'slope' 'yint' 'theta' 
-% save BI_L4_viz.mat 'lonxos' 'latyos' 'lonxws' 'latyws'
+% save BI_poly_L3.mat 'lonp' 'latp' 'xp' 'yp'
+% save BIreference_L3_interim.mat 'slope' 'yint' 'theta' 
+% save BI_L3_viz.mat 'lonxos' 'latyos' 'lonxws' 'latyws'
 
 %% NEXT
 % load the endpoints into software and extend if needed to create new
-% endpoints for ref line, to be fed into next script (2), 2b if needed, then re
-% run this script.
+% endpoints for ref line, to be fed into next script (2), 2b if needed
+% (lines in parallel).
