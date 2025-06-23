@@ -1,13 +1,14 @@
 %% No2b_reference_line.m
+% NSE
 % Another visual to determine which theta to use
 % Useful for lines in parallel (BI, and the two lines in LEI)
 % Finds the midpoint of each extrapolated line and creates new endpoints
-% using uniform theta (in this case theta from line 2).
+% using uniform theta (For Barn Inlet: Line 2).
 
 % interim files saved (not needed to carry forward)
 % BI_L#_viz2.mat 'lonxos' 'latyos' 'lonxws' 'latyws'
 
-
+% these interim points get extended and then re run through Script2.
 %% Determine midpoint
 
 l1= load('BI_reference_line_L1_interim2.mat');
@@ -70,14 +71,7 @@ l2.dref= m_lldist(l2.xref,l2.yref);
 [l2.s,l2.a12,l2.a21]=m_idist(l2.xo,l2.yo,l2.xw,l2.yw); 
 l2.theta= mod(450-l2.a12,360); 
 
-%% L1 
-% l1.xref=[l1.xo,l1.xw];
-% l1.yref=[l1.yo,l1.yw];
-% l1.dref= m_lldist(l1.xref,l1.yref); 
-% [l1.s,l1.a12,l1.a21]=m_idist(l1.xo,l1.yo,l1.xw,l1.yw); 
-% l1.theta0= mod(450-l1.a12,360); 
-
-%find distance from midpoint to 100m away along extrapolated reference
+%% find distance from midpoint to 100m away along extrapolated reference
 %line.
 l1.x2= l1.xmid + 100;
 l1.dy= 100 * tand(l2.theta); %see dwg for visual
