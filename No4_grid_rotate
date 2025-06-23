@@ -1,17 +1,50 @@
 %% No4_grid_rotate.m
+% NSE
 % Maps data onto grid and rotates velocities from reference line theta.
+
 % Deliverables: 
 % BI_adcp_L#_mmddyy_cropped_grid_rotate.mat: cross, along, projected
 % distance (of data point from the start of reference line), and distance
 % offset (of data point from the reference line).
 
+%% choose line: MANUAL
+% line = 1;
+% line = 2;
+line = 3;
+% line = 4;
 
-%% load mat files
-load BI_reference_line_L2.mat;
+%% choose date: MANUAL
+date= "042023";
+% date= "062823";
+% date= "071323";
+% date= "031524";
+% date= "031824";
 
-load BI_adcp_L2_031824_cropped.mat;
+%% load correct file
+fname= input('Enter the file name for corresponding date/line: ', 's');
+load(fname);
+
+%% load reference line
+
+if line== 1
+    load BI_reference_line_L1.mat;
+end
+
+if line== 2
+    load BI_reference_line_L2.mat;
+end
+
+if line== 3
+    load BI_reference_line_L3.mat;
+end
+
+if line== 4
+    load BI_reference_line_L4.mat;
+end
+
 
 %% define common grid
+% grid lat/lon (not vel data)
 a=size(u);
 nens = a(2); %number of ensembles
 
@@ -50,7 +83,6 @@ end
 % b= sqrt(c^2-a^2); %b is the distance away from ref line.
 distance_offset= sqrt(sqrt(d_east.^2 + d_north.^2) - proj_distance);
 
-
 %% add geo rotation: use theta from ref line
 xref=[xo,xw];
 yref=[yo,yw];
@@ -63,36 +95,35 @@ theta = 41.8552515665384; % use for L1, L3, L4
 cross = u.*cos(pi*theta/180) + v.*sin(pi*theta/180); 
 along = -u.*sin(pi*theta/180) + v.*cos(pi*theta/180);
 
-%% see viz script for plot, abridged here
-
-% check rotation/grid
-figure('color','w')
-scatter(along,cross)
-set(gca,'xlim',[-3,3],'ylim',[-3,3])
+%% check rotation/grid
+% figure('color','w')
+% scatter(along,cross)
+% set(gca,'xlim',[-3,3],'ylim',[-3,3])
 
 %% compare specific points:
+figure('color','w')
 subplot(1,2,1)
 plot(u,v,'k.')
 hold on
-plot(u(10,2942),v(10,2942),'m.') %L2 
+plot(u(10,1790),v(10,1790),'m.') %
 xlabel('Eastward velocity')
 ylabel('Northward velocity')
 title('Earth coordinates')
-% set(gca,'xlim',[-2,2],'ylim',[-2,2])
 set(gca,'xlim',[-3,3],'ylim',[-3,3])
 axis square
 grid on
 subplot(1,2,2)
 plot(cross,along,'k.')
 hold on
-plot(cross(10,2942),along(10,2942),'m.') %L2 
+plot(cross(10,1790),along(10,1790),'m.') %
 xlabel('Cross Channel velocity')
 ylabel('Along Channel velocity')
 title('Rotated')
-% set(gca,'xlim',[-2,2],'ylim',[-2,2])
 set(gca,'xlim',[-3,3],'ylim',[-3,3])
 axis square
 grid on
 
 %% save
-% save BI_adcp_L2_031524_cropped_grid_rotate.mat 'cross' 'along' 'proj_distance' 'distance_offset'
+% save(strcat('BI_','adcp_','L',num2str(line),'_',...
+% date,'_cropped_','grid_','rotate','.mat'),'cross','along','proj_distance',...
+% 'distance_offset')
