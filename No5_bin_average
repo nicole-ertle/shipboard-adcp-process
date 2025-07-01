@@ -49,8 +49,8 @@ load BI_adcp_L3_042023_cropped.mat
 
 % date= "062823";
 % off = 0.3;
-% load BI_adcp_L3_031524_cropped_grid_rotate.mat
-% load BI_adcp_L3_031524_cropped.mat
+% load BI_adcp_L3_062823_cropped_grid_rotate.mat
+% load BI_adcp_L3_062823_cropped.mat
 
 % date= "071323";
 % off = 0.6;
