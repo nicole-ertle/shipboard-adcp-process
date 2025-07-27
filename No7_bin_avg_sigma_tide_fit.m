@@ -4,7 +4,7 @@
 % (all sigma level)
 %% ------------------------------------------------------------------------
 %% SELECT LINE MANUALLY
-line=3;
+line=2;
 %% ------------------------------------------------------------------------
 %% CHANGE THE L# in MAT FILES BELOW:
 %% 04-20-23
@@ -12,16 +12,16 @@ line=3;
 % load('BI_adcp_L3_042023_cropped_grid_rotate_binavg_extrap.mat')
 %% ------------------------------------------------------------------------
 %% 06-28-23
-date = "062823";
-load('BI_adcp_L3_062823_cropped_grid_rotate_binavg_extrap.mat')
+% date = "062823";
+% load('BI_adcp_L3_062823_cropped_grid_rotate_binavg_extrap.mat')
 %% ------------------------------------------------------------------------
 %% 07-13-23
 % date = "071323";
 % load('BI_adcp_L3_071323_cropped_grid_rotate_binavg_extrap.mat')
 %% ------------------------------------------------------------------------
 %% 03-15-24
-% date = "031524";
-% load('BI_adcp_L3_031524_cropped_grid_rotate_binavg_extrap.mat')
+date = "031524";
+load('BI_adcp_L2_031524_cropped_grid_rotate_binavg_extrap.mat')
 %% ------------------------------------------------------------------------
 %% 03-18-24
 % date = "031824";
@@ -221,8 +221,8 @@ end
 % writetable(rms_table_M2, 'rms.xlsx', 'Sheet', sheetName);
 %% ------------------------------------------------------------------------
 %% Tc plot single ens/bin M2
-ee = 7;
-zz = 5;
+ee = 8;
+zz = 7;
 
 Pars = T_guess_all(:, ee, zz);
 T_fit_result = T_fit_result_all(:, ee, zz);  
@@ -429,22 +429,22 @@ for z = 1:n_bins
     end
 end
 %% ------------------------------------------------------------------------
-%% export m4
-% [num_params2, n_ens, n_bins] = size(T_fit_result_all2);
-% 
-% results_flat2 = reshape(permute(T_fit_result_all2, [2, 3, 1]), [], num_params2);
-% 
-% % ensemble and bin indices (corrected)
-% [bin_grid, ens_grid] = meshgrid(1:n_bins, 1:n_ens);
-% ens_list = ens_grid(:);
-% bin_list = bin_grid(:);
-% 
-% fit_table_M2M4 = array2table([ens_list, bin_list, results_flat2], ...
-%     'VariableNames', {'Ensemble', 'Bin', ...
-%                       'Residual', 'Phase_M2', 'Amp_M2', 'Phase_M4', 'Amp_M4'});
-% 
-% sheetName = date + "_M2M4";
-% writetable(fit_table_M2M4, 'tidefitresult.xlsx', 'Sheet', sheetName);
+% %% export m4
+[num_params2, n_ens, n_bins] = size(T_fit_result_all2);
+
+results_flat2 = reshape(permute(T_fit_result_all2, [2, 3, 1]), [], num_params2);
+
+% ensemble and bin indices (corrected)
+[bin_grid, ens_grid] = meshgrid(1:n_bins, 1:n_ens);
+ens_list = ens_grid(:);
+bin_list = bin_grid(:);
+
+fit_table_M2M4 = array2table([ens_list, bin_list, results_flat2], ...
+    'VariableNames', {'Ensemble', 'Bin', ...
+                      'Residual', 'Phase_M2', 'Amp_M2', 'Phase_M4', 'Amp_M4'});
+
+sheetName = date + "_M2M4";
+writetable(fit_table_M2M4, 'tidefitresult.xlsx', 'Sheet', sheetName);
 %% ------------------------------------------------------------------------
 %% export m4 rms2
 % 
@@ -712,7 +712,7 @@ hold on
 plot(X,h_mean,'k','LineWidth',2)
 colormap(ax(5),redblue)
 cb=colorbar;
-caxis([0,ma])
+caxis([0,ma * 1/2])
 ylabel(cb,'Amplitude (m)')
 xlabel('Distance (km)')
 ylabel('Depth (m)')
@@ -732,7 +732,6 @@ xlabel('Distance (km)')
 ylabel('Depth (m)')
 set(gca, 'YDir', 'reverse') 
 title('M4 Phase')
-
 
 %  filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\bin-avg tide fit sigma', ...
 %     sprintf('subplot_M2+M4_%s_line%d_sigma', date, line));
@@ -1084,11 +1083,11 @@ xlabel('Distance (km)')
 ylabel('Depth (m)')
 title(strcat('Line=', num2str(line),'  Date=',(num2str(date))))
 set(gca, 'YDir', 'reverse')  
-
-filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\bin-avg tide fit sigma\depth contour', ...
-    sprintf('residudal_velocity_M2+M4+M6_%s_line%d_depth', date, line));
-export_fig([filename, '.png'], '-m2');
-savefig([filename, '.fig']);
+% 
+% filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\bin-avg tide fit sigma\depth contour', ...
+%     sprintf('residudal_velocity_M2+M4+M6_%s_line%d_depth', date, line));
+% export_fig([filename, '.png'], '-m2');
+% savefig([filename, '.fig']);
 %% ------------------------------------------------------------------------
 %% pcolor RMS M2M4M6 
 
@@ -1102,10 +1101,10 @@ xlabel('Distance (km)')
 ylabel('Sigma Levels')
 title(strcat('Line=', num2str(line),'  Date=',(num2str(date))))
 % 
-filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\bin-avg tide fit sigma\rmse', ...
-    sprintf('RMSE_M2+M4+M6_%s_line%d_depth', date, line));
-export_fig([filename, '.png'], '-m2');
-savefig([filename, '.fig']);
+% filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\bin-avg tide fit sigma\rmse', ...
+%     sprintf('RMSE_M2+M4+M6_%s_line%d_depth', date, line));
+% export_fig([filename, '.png'], '-m2');
+% savefig([filename, '.fig']);
 %% ------------------------------------------------------------------------
 %% subplot all deliverables M2M4M6
 phase=cmocean('phase');
@@ -1185,7 +1184,7 @@ hold on
 plot(X,h_mean,'k','LineWidth',2)
 colormap(ax(5),redblue)
 cb=colorbar;
-caxis([0,ma])
+caxis([0,ma * 1/2])
 ylabel(cb,'Amplitude (m)')
 xlabel('Distance (km)')
 ylabel('Depth (m)')
@@ -1213,7 +1212,7 @@ hold on
 plot(X,h_mean,'k','LineWidth',2)
 colormap(ax(7),redblue)
 cb=colorbar;
-caxis([0,ma])
+caxis([0,ma * 1/3])
 ylabel(cb,'Amplitude (m)')
 xlabel('Distance (km)')
 ylabel('Depth (m)')
