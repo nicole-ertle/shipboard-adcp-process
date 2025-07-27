@@ -1,7 +1,13 @@
 % No7_bin_avg_sigma_tide_fit.m
 % NSE
 % performs tide fit the the x-bin averaged, z-extrapolated velocity data
-% (all sigma level)
+% (all sigma levels)
+
+%Deliverables: BI_adcp_L#_DATE_tide_fit_bin-interp_sigma.mat
+%T_fit_result_all=tide fit from M2
+%T_fit_result_all2=tide fit from M2+M4
+%T_fit_result_all3=tide fit from M2+M4+M6
+%other related variables; see save in last section.
 %% ------------------------------------------------------------------------
 %% SELECT LINE MANUALLY
 line=2;
