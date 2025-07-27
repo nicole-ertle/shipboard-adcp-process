@@ -1,6 +1,6 @@
 %% No6_bin_avg_extrapolation.m
 % NSE
-% will adjust for interp
+% adjust for incorporating cross 
 
 % Creates extrapolated matrices from surface to bottom in 0.25m increments.
 % Removes vel data exceeding water depth.
@@ -26,17 +26,17 @@
 
 line=3; %specify line #
 
-date= "042023";
-load BI_adcp_L3_042023_cropped_grid_rotate_binavg.mat
+% date= "042023";
+% load BI_adcp_L3_042023_cropped_grid_rotate_binavg.mat
 
-% date= "062823";
-% load BI_adcp_L3_062823_cropped_grid_rotate_binavg.mat
+date= "062823";
+load BI_adcp_L3_062823_cropped_grid_rotate_binavg.mat
 
 % date= "071323";
 % load BI_adcp_L3_071323_cropped_grid_rotate_binavg.mat
 
 % date= "031524";
-% load BI_adcp_L3_031524_cropped_grid_rotate_binavg.mat
+% load BI_adcp_L2_031524_cropped_grid_rotate_binavg.mat
 
 % date= "031824";
 % load BI_adcp_L3_031824_cropped_grid_rotate_binavg.mat
@@ -58,6 +58,7 @@ end
 for xx = 1:size(along_binavg, 3)
     h_xx = h_binavg(:,:,xx);
     along_xx = along_binavg(:,:,xx);
+    cross_xx = cross_binavg(:,:,xx);
     for n = idx_start_interp(xx):idx_end_interp(xx)
         height_int = h_xx(n) - bins;
         height(:, n, xx) = height_int;
@@ -65,8 +66,10 @@ for xx = 1:size(along_binavg, 3)
         neg(:, n, xx) = height_int <= 0; 
         height_int(neg_int) = NaN;
         along_xx(neg_int, n) = NaN;
+        cross_xx(neg_int, n) = NaN;
     end
     along_binavg(:,:,xx) = along_xx;
+    cross_binavg(:,:,xx) = cross_xx;
 end
 
 %% continue setting up matrices
@@ -114,16 +117,16 @@ for n=idx_start_interp(xx):idx_end_interp(xx)
     %find where depth > first good data in bins, and < last good data in bins
     along_mid = interp1(bins(fgb_int(:,n,xx):lgb_int(:,n,xx)), ...
         along_binavg(fgb_int(:,n,xx):lgb_int(:,n,xx),n,xx),z(b));
-    % cross_mid = interp1(bins(fgb_int(:,n,xx):lgb_int(:,n,xx)), ...
-    %     cross_binavg(fgb_int(:,n,xx):lgb_int(:,n,xx),n,xx),z(b));
+    cross_mid = interp1(bins(fgb_int(:,n,xx):lgb_int(:,n,xx)), ...
+        cross_binavg(fgb_int(:,n,xx):lgb_int(:,n,xx),n,xx),z(b));
         along_extrap(b,n,xx) = along_mid;
-        %cross_extrap(b,n,xx) = cross_mid;
+        cross_extrap(b,n,xx) = cross_mid;
     end
 end
 end
 
 along_mid = along_extrap;
-% cross_mid = cross_extrap;
+cross_mid = cross_extrap;
 
 %% PLOT bin-avg and extrap bin-avg at 25cm vertical:
 
@@ -167,7 +170,7 @@ along_mid = along_extrap;
 % copies the top most bin of data to surface, even short profiles
 
 along_extrap_constant= along_extrap;
-% cross_extrap_constant= cross_extrap;
+cross_extrap_constant= cross_extrap;
 
 for xx = 1:size(along_binavg, 3) 
 for n=idx_start_interp(xx):idx_end_interp(xx)
@@ -175,12 +178,12 @@ for n=idx_start_interp(xx):idx_end_interp(xx)
 d= find(~isnan(along_extrap_constant(:,n,xx)),1,'first');  
 along_extrap_constant(1:d-1,n,xx)= along_extrap_constant(d,n,xx); 
 
-% d= find(~isnan(cross_extrap_constant(:,n,xx)),1,'first');  
-% cross_extrap_constant(1:d-1,n,xx)= cross_extrap_constant(d,n,xx);
+e= find(~isnan(cross_extrap_constant(:,n,xx)),1,'first');  
+cross_extrap_constant(1:e-1,n,xx)= cross_extrap_constant(e,n,xx);
 end
 end
 
-%% surface extrapolation: Fit parabola to shallowest meter 
+%% surface extrapolation: Fit parabola to shallowest meter * need to account for cross vel from here on
 % four data points, requiring zero slope at surface using optimization 
 % see parabola_fit_example_zero_slope.m
 % constant extrap for short profiles
@@ -221,6 +224,7 @@ for n=idx_start_interp(xx):idx_end_interp(xx)
 
     x_data = bins(fgb_int(:,n,xx):fgb_int(:,n,xx)+3); 
     v_data = along_binavg(fgb_int(:,n,xx):fgb_int(:,n,xx)+3,n,xx); 
+    % u_data = cross_binavg(fgb_int(:,n,xx):fgb_int(:,n,xx)+3,n,xx); 
 
     % Define the optimization problem
     fun = @(coeff) sum((coeff(1) * x_data.^2 + coeff(2) * x_data + coeff(3) - v_data).^2,'all');
@@ -479,7 +483,7 @@ end
 %1) constant (surface) and linear (bottom) extrapolation
 %2) polynomial- 0slope (surface) and logarithmic (bottom) extrapolation
 % 
-xx=14;
+xx=12;
 % % Select 10 index numbers for vertical profiles
 profiles = 1:10;
 % % profiles = 9:18;
@@ -531,7 +535,7 @@ xlabel('Projected Distance (km)')
 ylabel('Depth')
 title(strcat('Date= ', date, ' Transect=', num2str(xx)));
 
-% export_fig(fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\fig\Progress\20Apr23\Line3', ...
+% export_fig(fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\fig\Progress\15Mar24\Line2', ...
 %     sprintf('transect%d.png', xx)), '-png','-m2');
 
 end
