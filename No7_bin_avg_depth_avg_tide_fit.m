@@ -3,7 +3,7 @@
 % Tide fitting for horizontally bin averaged, depth averaged velocity data
 
 %% SELECT LINE MANUALLY
-line=3;
+line=2;
 %% ------------------------------------------------------------------------
 %% CHANGE THE L# in MAT FILES BELOW:
 %% 04-20-23
@@ -11,16 +11,16 @@ line=3;
 % load('BI_adcp_L3_042023_cropped_grid_rotate_binavg_extrap.mat')
 %% ------------------------------------------------------------------------
 %% 06-28-23
-date = "062823";
-load('BI_adcp_L3_062823_cropped_grid_rotate_binavg_extrap.mat')
+% date = "062823";
+% load('BI_adcp_L3_062823_cropped_grid_rotate_binavg_extrap.mat')
 %% ------------------------------------------------------------------------
 %% 07-13-23
 % date = "071323";
 % load('BI_adcp_L3_071323_cropped_grid_rotate_binavg_extrap.mat')
 %% ------------------------------------------------------------------------
 %% 03-15-24
-% date = "031524";
-% load('BI_adcp_L3_031524_cropped_grid_rotate_binavg_extrap.mat')
+date = "031524";
+load('BI_adcp_L2_031524_cropped_grid_rotate_binavg_extrap.mat')
 %% ------------------------------------------------------------------------
 %% 03-18-24
 % date = "031824";
