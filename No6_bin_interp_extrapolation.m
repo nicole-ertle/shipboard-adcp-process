@@ -1,6 +1,6 @@
 %% No6_bin_interp_extrapolation.m
 % NSE
-% will adjust for interp and incorporating cross 
+% need to incorporate cross
 
 % Creates extrapolated matrices from surface to bottom in 0.25m increments.
 % Removes vel data exceeding water depth.
@@ -14,11 +14,8 @@
 % 2. logarithmic using the deepest bin of data*
     % *there are a handful of lines that cannot be logarithmically extrapolated
     % using the last bin of data. In these instances, there are two options:
-        % a. use second to last bin for logarithmic extrapolation,
-        % b. use the last bin of data for linear extrapolation.** (commented
-        % out)
-            % ** if b is selected, there may be select ensembles that require 
-            % using the second to last bin of data. 
+        % a. use second to last bin for logarithmic extrapolation
+        % b. use the last bin of data for linear extrapolation
 
 % Conversion to sigma coordinates.
 
@@ -26,11 +23,11 @@
 
 line=3; %specify line #
 
-% date= "042023";
-% load BI_adcp_L3_042023_cropped_grid_rotate_bininterp.mat
+date= "042023";
+load BI_adcp_L3_042023_cropped_grid_rotate_bininterp.mat
 
-date= "062823";
-load BI_adcp_L3_062823_cropped_grid_rotate_bininterp.mat
+% date= "062823";
+% load BI_adcp_L3_062823_cropped_grid_rotate_bininterp.mat
 
 % date= "071323";
 % load BI_adcp_L3_071323_cropped_grid_rotate_bininterp.mat
@@ -392,195 +389,110 @@ for n=idx_start_interp(xx):idx_end_interp(xx)
 end
 end
 
-%% 
-% 
-% Bottom extrapolation: Fit logarithmic profile to bottom 
-% % requires curve-fitting toolbox
-% nearbottom = 0.08;
-% 
-% %make a copy to compare
-% along_extrap_copy = along_extrap;
-% 
-% %CHECK UNITS OF roughness length = 0.067 (meters?)
-% fit_params = fittype('a*log(x/0.067)','dependent',{'y'},'independent',{'x'},'coefficients',{'a'});
-% 
-% for xx= 1:size(along_bininterp, 3)
-% for n=idx_start_interp(xx):idx_end_interp(xx)
-%     height2 = h_bininterp(:,n,xx)-bins;
-%     b=find(height2<=2 & height2>=0.1); %select cells btwn this threshold (m above bottom).
-% 
-%     if all(isnan(along_extrap(:,n,xx)), 'all')
-%         continue; %if true (all nans) then with skip rest of loop
-% 
-%     elseif b(end)>=lgb_int(:,n,xx) && lgb_int(:,n,xx) > 2
-%         x2=height2(lgb_int(:,n,xx)-2:lgb_int(:,n,xx)); 
-%         v2=along_bininterp(lgb_int(:,n,xx)-2:lgb_int(:,n,xx),n,xx);
-%         % u2=cross_bininterp(lgb_int(:,n,xx)-2:lgb_int(:,n,xx),n,xx);
-%     else
-%         x2=height2(b);
-%         v2=along_bininterp(b,n,xx);
-%         % u2=cross_bininterp(b,n,xx);
-%     end
-% 
-% % new
-% % Skip if v2 contains NaNs, or x2 has invalid (<=0) values
-% if all(~isnan(v2))
-%     try
-%         coeff_v = fit(x2(:), v2(:), fit_params, 'start', 0);
-%          % coeff_u = fit(x2(:),u2(:),fit_params,'start',0);
-%     catch 
-%         warning('Fit failed at transect %d, profile %d', xx, n);
-%         continue;
-%     end
-% else
-%     warning('Skipping log fit at transect %d, profile %d; insufficient clean data.', xx, n);
-%     continue;
-% end
-%  %end new
-% 
-%     %Select near-bottom cells to fill in (to avoid overshooting 0)
-%     d2=find(z>=bins(lgb_int(:,n,xx)) & z<=h_bininterp(:,n,xx)-nearbottom);
-% 
-%     if ~isempty(d2)
-%         height_extrap = h_bininterp(:,n,xx)-z;
-%         h = height_extrap(d2);
-%         v_bott = coeff_v.a.*log(h./0.067);
-%         % u_bott = coeff_u.a.*log(h./0.067);
-% 
-%         %fill in to extrap matrices
-%         along_extrap(d2,n,xx)=v_bott;
-%         % cross_extrap(d2,n,xx)=u_bott;
-% 
-% %Either use lgb-1 log extrap: or see below
-%        elseif isempty(d2) 
-%             fprintf('Profile n=%d in transect xx=%d, used second to last bin LOG.\n', n, xx);%\n',n,xx); % used lgb-1.\n', n, xx);
-%             d3=find(z>=bins(lgb_int(:,n,xx)-1) & z<h_bininterp(:,n,xx)-nearbottom); 
-%             if ~isempty(d3)
-%             height_extrap = h_bininterp(:,n,xx)-z;
-%             h = height_extrap(d3);
-%             v_bott = coeff_v.a.*log(h./0.067);
-%             % u_bott = coeff_u.a.*log(h./0.067);
-% 
-%         %fill in to extrap matrices
-%         along_extrap(d3,n,xx)=v_bott;
-%         % cross_extrap(d3,n,xx)=u_bott;
-% 
-% % or use linear extrap on lgb, or linear lgb-1:
-%         % else 
-%         % fprintf('Profile n=%d in transect xx=%d skipped from LOG extrapolation.\n', n, xx);
-%         % a= find(~isnan(along_extrap(:,n,xx)),1,'last');  
-%         % b= find(z <= h_bininterp(:,n,xx),1,'last');
-%         %     if b>a
-%         %        fprintf('Profile n=%d in transect xx=%d used LINEAR extrap.\n', n, xx);
-%         %        test= interp1([z(a,1) h_bininterp(:,n,xx)],[along_extrap(a,n,xx) 0],[z(a+1:b)]);
-%         %        along_extrap(a+1:b,n,xx)= test(:);
-%         %     else if b==a 
-%         %         fprintf('Profile n=%d in transect xx=%d skipped; b==a; used second to last bin linear.\n', n, xx);
-%         %         a2= find(~isnan(along_extrap_constant(:,n,xx)),1,'last')-1; %minus one bin
-%         %         test2= interp1([z(a2,1) h_bininterp(:,n,xx)],[along_extrap_constant(a2,n,xx) 0],[z(a2+1:b)]);
-%         %         along_extrap(a2+1:b,n,xx)= test2(:);
-% 
-%         %Fill in deepest bin above bottom if needed
-%         % if h(end)>dz 
-%         %     v_bott2 = interp1([h(end),0],[v_bott(end),0],dz);
-%         %     u_bott2 = interp1([h(end),0],[u_bott(end),0],dz);
-%         %     along_extrap(d2(end)+1,n,xx) = v_bott2;
-%         %     cross_extrap(d2(end)+1,n,xx) = u_bott2;
-%         % end
-% 
-%                 % end
-%             end
-% end
-% end
-% end
 %% Bottom extrapolation: Fit logarithmic profile to bottom 
 % requires curve-fitting toolbox
 nearbottom = 0.08;
-
 %make a copy to compare
 along_extrap_copy = along_extrap;
-
 %CHECK UNITS OF roughness length = 0.067 (meters?)
-fit_params = fittype('a*log(x/0.067)','dependent',{'y'},'independent',{'x'},'coefficients',{'a'});
+fit_params = fittype('a*log(x/0.067)', 'dependent', {'y'}, 'independent', {'x'}, 'coefficients', {'a'});
 
-for xx= 1:size(along_bininterp, 3)
-for n=idx_start_interp(xx):idx_end_interp(xx)
-    height2 = h_bininterp(:,n,xx)-bins;
-    b=find(height2<=2 & height2>=0.1); %select cells btwn this threshold (m above bottom).
-    
-    if all(isnan(along_extrap(:,n,xx)), 'all')
-        continue; %if true (all nans) then with skip rest of loop
-        
-    elseif b(end)>=lgb_int(:,n,xx) && lgb_int(:,n,xx) > 2
-        x2=height2(lgb_int(:,n,xx)-2:lgb_int(:,n,xx)); 
-        v2=along_bininterp(lgb_int(:,n,xx)-2:lgb_int(:,n,xx),n,xx);
-        % u2=cross_bininterp(lgb_int(:,n,xx)-2:lgb_int(:,n,xx),n,xx);
-    else
-        x2=height2(b);
-        v2=along_bininterp(b,n,xx);
-        % u2=cross_bininterp(b,n,xx);
-    end
+for xx = 1:size(along_bininterp, 3)
+    for n = idx_start_interp(xx):idx_end_interp(xx)
+        height2 = h_bininterp(:,n,xx) - bins;
+        b = find(height2<=2 & height2>=0.1);%select cells btwn this threshold (m above bottom).
 
-if all(~isnan(v2))
-    try
-        coeff_v = fit(x2(:), v2(:), fit_params, 'start', 0);
-        % coeff_u = fit(x2(:),u2(:),fit_params,'start',0);
-        fit_method = "log";
-    catch
-        warning('Fit failed at transect %d, profile %d; falling back to linear.', xx, n);
-        fit_method = "linear";
+        if all(isnan(along_extrap(:, n, xx)), 'all')
+            continue;%if true (all nans) then with skip rest of loop
+        end
+
+        % select bins for log fitting
+        if b(end) >= lgb_int(:,n,xx) && lgb_int(:,n,xx) > 2
+            x2 = height2(lgb_int(:,n,xx)-2 : lgb_int(:,n,xx));
+            v2 = along_bininterp(lgb_int(:,n,xx)-2 : lgb_int(:,n,xx),n,xx);
+            % u2 = cross_bininterp(lgb_int(:,n,xx)-2 : lgb_int(:,n,xx),n,xx);
+        else
+            x2 = height2(b);
+            v2 = along_bininterp(b,n,xx);
+            % u2 = cross_bininterp(b,n,xx);
+        end
+
+        %log fit
+        try
+            if all(~isnan(v2)) %&& all(x2 > 0)
+                coeff_v = fit(x2(:), v2(:), fit_params, 'start', 0);
+               % coeff_u = fit(x2(:),u2(:),fit_params,'start',0);
+                fit_method = "log";
+            else
+                fit_method = "linear";
+            end
+        catch
+            warning('Log fit failed at profile n=%d in transect xx=%d; falling back to linear.', xx, n);
+            fit_method = "linear";
+        end
+
+        if strcmp(fit_method, "log")
+            %first attempt: log extrapolation using last bin of data
+            d2 = find(z>=bins(lgb_int(:,n,xx)) & z<=h_bininterp(:,n,xx)-nearbottom);
+            height_extrap = h_bininterp(:,n,xx)-z;
+
+            if ~isempty(d2)
+                h = height_extrap(d2);
+                v_bott = coeff_v.a .* log(h ./ 0.067);
+                % u_bott = coeff_v.a .* log(h ./ 0.067);
+                along_extrap(d2, n, xx) = v_bott; %fill in to extrap matrices
+                % cross_extrap(d2, n, xx) = u_bott;
+                continue; % done
+
+            else
+                %second attempt: log extrap using second to last bin of data
+                fprintf('Profile n=%d in transect xx=%d used second to last bin LOG.\n', n, xx);
+                d3 = find(z>=bins(lgb_int(:,n,xx)-1) & z<h_bininterp(:,n,xx)-nearbottom);
+                if ~isempty(d3)
+                    h = height_extrap(d3);
+                    v_bott = coeff_v.a .* log(h ./ 0.067);
+                    % u_bott = coeff_v.a .* log(h ./ 0.067);
+                    along_extrap(d3, n, xx) = v_bott;%fill in to extrap matrices
+                    % cross_extrap(d3, n, xx) = u_bott;
+                    continue; % done
+                else
+                    %fallback to linear extrap
+                    fit_method = "linear";
+                end
+            end
+        end
+
+        if strcmp(fit_method, "linear")
+            a = find(~isnan(along_extrap(:,n,xx)), 1, 'last');
+            b_idx = find(z<=h_bininterp(:,n,xx), 1, 'last');
+
+            if ~isempty(a) && ~isempty(b_idx)
+                if b_idx > a
+                    test = interp1([z(a,1), h_bininterp(:,n,xx)],...
+                                   [along_extrap(a,n,xx),0],...
+                                   z(a+1:b_idx));
+                    along_extrap(a+1:b_idx,n,xx) = test(:);
+                    fprintf('Profile n=%d in transect xx=%d used LINEAR fallback extrapolation.\n', n, xx);
+                elseif b_idx == a
+                    fprintf('Profile n=%d in transect xx=%d b==a; used second to last bin linear extrap.\n', n, xx);
+                    a2 = find(~isnan(along_extrap_constant(:,n,xx)),1,'last')-1;%minus one bin
+                    % if a2 >= 1
+                        test2 = interp1([z(a2,1), h_bininterp(:,n,xx)],...
+                                        [along_extrap_constant(a2,n,xx),0],...
+                                        z(a2+1:b_idx));
+                        along_extrap(a2+1:b_idx,n,xx) = test2(:);
+                    % end
+                end
+            end
+        end
     end
-else
-    warning('Using linear fallback at transect %d, profile %d; v2 has NaNs.', xx, n);
-    fit_method = "linear";
 end
 
-if strcmp(fit_method, "log")
-    %Select near-bottom cells to fill in (to avoid overshooting 0)
-    d2 = find(z >= bins(lgb_int(:, n, xx)) & z <= h_bininterp(:, n, xx) - nearbottom);
-    if ~isempty(d2)
-        height_extrap = h_bininterp(:, n, xx) - z;
-        h = height_extrap(d2);
-        v_bott = coeff_v.a .* log(h ./ 0.067);
-        % u_bott = coeff_u.a.*log(h./0.067);
-
-        %fill in to extrap matrices
-        along_extrap(d2, n, xx) = v_bott;
-        % cross_extrap(d3,n,xx)=u_bott;
-    end
-
-elseif strcmp(fit_method, "linear")
-    a = find(~isnan(along_extrap(:, n, xx)), 1, 'last');
-    b = find(z <= h_bininterp(:, n, xx), 1, 'last');
-
-    if b > a;%~isempty(a) && ~isempty(b) && b > a
-        test = interp1([z(a, 1), h_bininterp(:, n, xx)], [along_extrap(a, n, xx), 0], z(a+1:b));
-        along_extrap(a+1:b, n, xx) = test(:);
-        fprintf('Profile n=%d in transect xx=%d used LINEAR fallback extrapolation.\n', n, xx);
-            
-   if b==a 
-    fprintf('Profile n=%d in transect xx=%d b==a; used second to last bin linear.\n', n, xx);
-    a2= find(~isnan(along_extrap_constant(:,n,xx)),1,'last')-1; %minus one bin
-    test2= interp1([z(a2,1) h_bininterp(:,n,xx)],[along_extrap_constant(a2,n,xx) 0],[z(a2+1:b)]);
-    along_extrap(a2+1:b,n,xx)= test2(:);
-
-    %Fill in deepest bin above bottom if needed
-        % if h(end)>dz 
-        %     v_bott2 = interp1([h(end),0],[v_bott(end),0],dz);
-        %     u_bott2 = interp1([h(end),0],[u_bott(end),0],dz);
-        %     along_extrap(d2(end)+1,n,xx) = v_bott2;
-        %     cross_extrap(d2(end)+1,n,xx) = u_bott2;
-        % end
-    end
-    end
-end
-end
-end
 %% PLOT select profiles
 %1) constant (surface) and linear (bottom) extrapolation
 %2) polynomial- 0slope (surface) and logarithmic (bottom) extrapolation
 % 
-xx=4;
+xx=14;
 % % Select 10 index numbers for vertical profiles
 profiles = 2:11;
 % profiles = 10:16;
@@ -614,7 +526,7 @@ sgtitle(strcat('Transect =', num2str(xx)));
 %% PLOT just along and saves to folder
 
 for xx = 1:size(along_bininterp,3)
-% xx=7;
+% xx=4;
 figure('color', 'white')
 pcolorjw(X,z,along_extrap(:,:,xx))
 hold on
@@ -717,22 +629,22 @@ pcolorjw(X,sigma_levels,along_sigma(:,:,xx))
 cb = colorbar; ylabel(cb,'along-channel velocity (m/s)')
 colormap(redblue)
 caxis([-1.5,1.5])
+ax=gca;
+set(gca,'xlim',[0,max(X)])
 xlabel('Distance (km)')
 ylabel('Depth (m)')
 shading flat
 title('Sigma Coords')
 sgtitle(strcat('Transect =', num2str(xx)));
-
+% 
 % filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No6_bin_interp_extrap', ...
 %     sprintf('Along_Sigma_%s_line%d_transect%d', date, line, xx));
 % export_fig([filename, '.png'], '-m2');
 % savefig([filename, '.fig']);
+
 end
-
-
 %% SAVE variables
 % save(strcat('BI_','adcp_','L',num2str(line),'_',...
 %     date,'_cropped_','grid_','rotate_','bininterp_','extrap','.mat'),'along_extrap',...
 %     'along_extrap_constant','z','height_extrap','idx_start_interp','idx_end_interp',...
 %     'along_sigma','sigma_levels','X','time_bininterp','h_bininterp')
-
