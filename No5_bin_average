@@ -1,6 +1,6 @@
 %% No5_bin_average.m
 % NSE
-%Removal of noisy ensembles and creates horiztonally bin averaged matrices (25m)
+%Removal of noisy ensembles and creates horizontally bin averaged matrices (25m)
 
 % Applies draft offset to depths.
 % Separates cropped individual transects by time (interim cell array), 
@@ -29,8 +29,8 @@ load BI_bins.mat
 % line= 1;
 % load BI_reference_line_L1.mat
 
-line= 2;
-load BI_reference_line_L2.mat
+% line= 2;
+% load BI_reference_line_L2.mat
 
 % line= 3;
 % load BI_reference_line_L3.mat
@@ -44,28 +44,28 @@ load BI_reference_line_L2.mat
 
 % date= "042023";
 % off = 0.4;
-% load BI_adcp_L2_042023_cropped_grid_rotate.mat
-% load BI_adcp_L2_042023_cropped.mat
+% load BI_adcp_L4_042023_cropped_grid_rotate.mat
+% load BI_adcp_L4_042023_cropped.mat
 
 % date= "062823";
 % off = 0.3;
-% load BI_adcp_L1_062823_cropped_grid_rotate.mat
-% load BI_adcp_L1_062823_cropped.mat
-
+% load BI_adcp_L4_062823_cropped_grid_rotate.mat
+% load BI_adcp_L4_062823_cropped.mat
+% 
 % date= "071323";
 % off = 0.6;
-% load BI_adcp_L1_071323_cropped_grid_rotate.mat
-% load BI_adcp_L1_071323_cropped.mat
+% load BI_adcp_L4_071323_cropped_grid_rotate.mat
+% load BI_adcp_L4_071323_cropped.mat
 
-date= "031524";
-off = 0.6;
-load BI_adcp_L2_031524_cropped_grid_rotate.mat
-load BI_adcp_L2_031524_cropped.mat
-% 
+% date= "031524";
+% off = 0.6;
+% load BI_adcp_L4_031524_cropped_grid_rotate.mat
+% load BI_adcp_L4_031524_cropped.mat
+
 % date= "031824";
 % off = 0.6;
-% load BI_adcp_L1_031824_cropped_grid_rotate.mat
-% load BI_adcp_L1_031824_cropped.mat
+% load BI_adcp_L4_031824_cropped_grid_rotate.mat
+% load BI_adcp_L4_031824_cropped.mat
 
 %% redefine 'bins' and 'depth' adding offset
 
@@ -2229,7 +2229,6 @@ for j = 1:mt
     end
 end
 
-
 %% LOTS OF PLOTS
 % each transect
 for xx = 1:size(along_binavg,3)
@@ -2244,11 +2243,12 @@ for xx = 1:size(along_binavg,3)
     clim([-1.5,1.5])
     title(strcat('bin-avg along chn transect = ',num2str(tt(xx))))
 
-    % export_fig(fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\fig\Bin-Avg\L2\031524', ...
-    % sprintf('transect%d.png', xx)), '-png','-m2');
+filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No5_bin_avg', ...
+    sprintf('%s_line%d_transect%d', date, line, xx));
+export_fig([filename, '.png'], '-m2');
+savefig([filename, '.fig']);
 
 end
-
 
 %% Plot depth-averaged, bin-averaged velocity to check for points skewed by
 % outliers. Use bar graph to check data coverage.
@@ -2284,6 +2284,12 @@ xlabel('Projected distance')
 
     % export_fig(fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\fig\Bin-Avg\L2\031524\skewed', ...
     % sprintf('transect%d.png', xx)), '-png','-m2');
+
+    filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No5_bin_avg\QA', ...
+    sprintf('%s_line%d_transect%d', date, line, xx));
+export_fig([filename, '.png'], '-m2');
+savefig([filename, '.fig']);
+
 end
 
 %% Plot bin-averaged along & cross
@@ -2324,7 +2330,7 @@ ylabel('Depth')
 title('cross, cropped, bin-avg')
 end
 %% save 
-% save(strcat('BI_','adcp_','L',num2str(line),'_',...
-% date,'_cropped_','grid_','rotate_','binavg','.mat'),'u_binavg',...
-% 'v_binavg','along_binavg','cross_binavg','time_binavg','h_binavg',...
-% 'start','last','X','bins')
+save(strcat('BI_','adcp_','L',num2str(line),'_',...
+date,'_cropped_','grid_','rotate_','binavg','.mat'),'u_binavg',...
+'v_binavg','along_binavg','cross_binavg','time_binavg','h_binavg',...
+'start','last','X','bins')
