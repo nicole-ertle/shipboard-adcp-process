@@ -10,28 +10,28 @@
 %other related variables; see save in last section.
 %% ------------------------------------------------------------------------
 %% SELECT LINE MANUALLY
-line=3;
+line=4;
 %% ------------------------------------------------------------------------
 %% CHANGE THE L# in MAT FILES BELOW:
 %% 04-20-23
-date = "042023";
-load('BI_adcp_L3_042023_cropped_grid_rotate_binavg_extrap.mat')
+% date = "042023";
+% load('BI_adcp_L4_042023_cropped_grid_rotate_binavg_extrap.mat')
 %% ------------------------------------------------------------------------
 %% 06-28-23
 % date = "062823";
-% load('BI_adcp_L3_062823_cropped_grid_rotate_binavg_extrap.mat')
+% load('BI_adcp_L4_062823_cropped_grid_rotate_binavg_extrap.mat')
 %% ------------------------------------------------------------------------
 %% 07-13-23
 % date = "071323";
-% load('BI_adcp_L3_071323_cropped_grid_rotate_binavg_extrap.mat')
+% load('BI_adcp_L4_071323_cropped_grid_rotate_binavg_extrap.mat')
 %% ------------------------------------------------------------------------
 %% 03-15-24
 % date = "031524";
-% load('BI_adcp_L2_031524_cropped_grid_rotate_binavg_extrap.mat')
+% load('BI_adcp_L4_031524_cropped_grid_rotate_binavg_extrap.mat')
 %% ------------------------------------------------------------------------
 %% 03-18-24
-% date = "031824";
-% load('BI_adcp_L3_031824_cropped_grid_rotate_binavg_extrap.mat')
+date = "031824";
+load('BI_adcp_L4_031824_cropped_grid_rotate_binavg_extrap.mat')
 %% ------------------------------------------------------------------------
 %% plots
 %test: and prep: for loop graph time and horiz vel transect number assign to time
@@ -197,27 +197,27 @@ for z = 1:n_bins
 end
 %% ------------------------------------------------------------------------
 %% export m2
-[num_params, n_bins, n_ens] = size(T_fit_result_all);
-results_flat = reshape(permute(T_fit_result_all, [3, 2, 1]), [], num_params);
-ens_list = repmat((1:n_ens)', n_bins, 1);%1–16, repeated 10x
-bin_list = repelem((1:n_bins)', n_ens); %1repeated16x,2repeated16x,etc
-fit_table_M2 = array2table([ens_list, bin_list, results_flat], ...
-    'VariableNames', {'Ensemble', 'Bin', 'Residual', 'Phase_M2', 'Amp_M2'});
-sheetName = date + "_M2";
-base = 'C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\excel';
-filename = 'tidefitresult.xlsx';
-output_path = fullfile(base, filename);
-writetable(fit_table_M2, output_path, 'Sheet', sheetName);
+% [num_params, n_bins, n_ens] = size(T_fit_result_all);
+% results_flat = reshape(permute(T_fit_result_all, [3, 2, 1]), [], num_params);
+% ens_list = repmat((1:n_ens)', n_bins, 1);%1–16, repeated 10x
+% bin_list = repelem((1:n_bins)', n_ens); %1repeated16x,2repeated16x,etc
+% fit_table_M2 = array2table([ens_list, bin_list, results_flat], ...
+%     'VariableNames', {'Ensemble', 'Bin', 'Residual', 'Phase_M2', 'Amp_M2'});
+% sheetName = date + "_M2";
+% base = 'C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\excel';
+% filename = 'tidefitresult.xlsx';
+% output_path = fullfile(base, filename);
+% writetable(fit_table_M2, output_path, 'Sheet', sheetName);
 %% ------------------------------------------------------------------------
 %% export m2 rms
-rms_flat_M2 = T_fit_rms_all(:);  % [n_bins*n_ens x 1]
-rms_table_M2 = table(ens_list, bin_list, rms_flat_M2, ...
-    'VariableNames', {'Ensemble', 'Bin', 'RMS_M2'});
-sheetName = date + "_RMS_M2";
-base = 'C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\excel';
-filename = 'rms.xlsx';
-output_path = fullfile(base, filename);
-writetable(rms_table_M2, output_path, 'Sheet', sheetName);
+% rms_flat_M2 = T_fit_rms_all(:);  % [n_bins*n_ens x 1]
+% rms_table_M2 = table(ens_list, bin_list, rms_flat_M2, ...
+%     'VariableNames', {'Ensemble', 'Bin', 'RMS_M2'});
+% sheetName = date + "_RMS_M2";
+% base = 'C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\excel';
+% filename = 'rms.xlsx';
+% output_path = fullfile(base, filename);
+% writetable(rms_table_M2, output_path, 'Sheet', sheetName);
 %% ------------------------------------------------------------------------
 %% Tc plot single ens/bin M2
 ee = 8;
@@ -276,10 +276,10 @@ ylabel('Amplitude (m)'); xlabel('T*'); title('Sum of Tidal Constituents')
 legend('Input parameters','Model Fit (fminsearch)','Observed Data')
 sgtitle(sprintf('Ensemble = %d, Bin = %d', ee, zz))
 
-filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\constituents', ...
-    sprintf('M2_%s_line%d_ens%d_bin%d', date, line,ee,zz));
-export_fig([filename, '.png'], '-m2');
-savefig([filename, '.fig']);
+% filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\constituents', ...
+%     sprintf('M2_%s_line%d_ens%d_bin%d', date, line,ee,zz));
+% export_fig([filename, '.png'], '-m2');
+% savefig([filename, '.fig']);
 %% ------------------------------------------------------------------------
 %% pcolor sigma resid vel M2
 residuals = squeeze(T_fit_result_all(1, :, :));  %10x16
@@ -298,10 +298,10 @@ xlim([0,X(end)+0.025])
 % xlim([0,max(X)])
 title(strcat('Line=', num2str(line),'  Date=',(num2str(date))))
 % 
-filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit', ...
-    sprintf('residual_velocity_M2_%s_line%d_sigma', date, line));
-export_fig([filename, '.png'], '-m2');
-savefig([filename, '.fig']);
+% filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit', ...
+%     sprintf('residual_velocity_M2_%s_line%d_sigma', date, line));
+% export_fig([filename, '.png'], '-m2');
+% savefig([filename, '.fig']);
 %% ------------------------------------------------------------------------
 %% pcolor resid vel vs average bathy M2
 
@@ -334,10 +334,10 @@ ylabel('Depth (m)')
 title(strcat('Line=', num2str(line),'  Date=',(num2str(date))))
 set(gca, 'YDir', 'reverse')  
 % 
-filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\depth contour', ...
-    sprintf('residual_velocity_M2_%s_line%d_depth', date, line));
-export_fig([filename, '.png'], '-m2');
-savefig([filename, '.fig']);
+% filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\depth contour', ...
+%     sprintf('residual_velocity_M2_%s_line%d_depth', date, line));
+% export_fig([filename, '.png'], '-m2');
+% savefig([filename, '.fig']);
 %% ------------------------------------------------------------------------
 %% pcolor RMS M2
 
@@ -351,10 +351,10 @@ xlabel('Distance (km)')
 ylabel('Sigma Levels')
 title(strcat('Line=', num2str(line),'  Date=',(num2str(date))))
 
-filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\rmse', ...
-    sprintf('RMSE_M2_%s_line%d_depth', date, line));
-export_fig([filename, '.png'], '-m2');
-savefig([filename, '.fig']);
+% filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\rmse', ...
+%     sprintf('RMSE_M2_%s_line%d_depth', date, line));
+% export_fig([filename, '.png'], '-m2');
+% savefig([filename, '.fig']);
 %% ------------------------------------------------------------------------
 %% ------------------------------------------------------------------------
 %% 2nd run: M2+M4
@@ -429,28 +429,28 @@ end
 
 %% ------------------------------------------------------------------------
 %% export m4
-[num_params2, n_bins, n_ens] = size(T_fit_result_all2);
-results_flat2 = reshape(permute(T_fit_result_all2, [3, 2, 1]), [], num_params2);
-% ens_list = repmat((1:n_ens)', n_bins, 1);%1–16, repeated 10x
-% bin_list = repelem((1:n_bins)', n_ens); %1repeated16x,2repeated16x,etc
-fit_table_M2M4 = array2table([ens_list, bin_list, results_flat2], ...
-    'VariableNames', {'Ensemble', 'Bin', ...
-                      'Residual', 'Phase_M2', 'Amp_M2', 'Phase_M4', 'Amp_M4'});
-sheetName = date + "_M2M4";
-base = 'C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\excel';
-filename = 'tidefitresult.xlsx';
-output_path = fullfile(base, filename);
-writetable(fit_table_M2M4, output_path, 'Sheet', sheetName);
+% [num_params2, n_bins, n_ens] = size(T_fit_result_all2);
+% results_flat2 = reshape(permute(T_fit_result_all2, [3, 2, 1]), [], num_params2);
+% % ens_list = repmat((1:n_ens)', n_bins, 1);%1–16, repeated 10x
+% % bin_list = repelem((1:n_bins)', n_ens); %1repeated16x,2repeated16x,etc
+% fit_table_M2M4 = array2table([ens_list, bin_list, results_flat2], ...
+%     'VariableNames', {'Ensemble', 'Bin', ...
+%                       'Residual', 'Phase_M2', 'Amp_M2', 'Phase_M4', 'Amp_M4'});
+% sheetName = date + "_M2M4";
+% base = 'C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\excel';
+% filename = 'tidefitresult.xlsx';
+% output_path = fullfile(base, filename);
+% writetable(fit_table_M2M4, output_path, 'Sheet', sheetName);
 %% ------------------------------------------------------------------------
 %% export m4 rms2
-rms_flat_M2M4 = T_fit_rms_all2(:); 
-rms_table_M2M4 = table(ens_list, bin_list, rms_flat_M2M4, ...
-    'VariableNames', {'Ensemble', 'Bin', 'RMS_M2M4'});
-sheetName = date + "_RMS_M2M4";
-base = 'C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\excel';
-filename = 'rms.xlsx';
-output_path = fullfile(base, filename);
-writetable(rms_table_M2M4, output_path, 'Sheet', sheetName);
+% rms_flat_M2M4 = T_fit_rms_all2(:); 
+% rms_table_M2M4 = table(ens_list, bin_list, rms_flat_M2M4, ...
+%     'VariableNames', {'Ensemble', 'Bin', 'RMS_M2M4'});
+% sheetName = date + "_RMS_M2M4";
+% base = 'C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\excel';
+% filename = 'rms.xlsx';
+% output_path = fullfile(base, filename);
+% writetable(rms_table_M2M4, output_path, 'Sheet', sheetName);
 %% ------------------------------------------------------------------------
 %% Tc plot: choose ens and bin depth M2+M4
 % ee = 7;  
@@ -497,10 +497,10 @@ ylabel('Amplitude (m)'); xlabel('T*'); title('Sum of tidal constituents')
 legend('Input parameters','Model Fit','Observed Data')
 sgtitle(sprintf('Ensemble = %d, Bin = %d', ee, zz))
 
-filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\constituents', ...
-    sprintf('M2+M4_%s_line%d_ens%d_bin%d', date, line,ee,zz));
-export_fig([filename, '.png'], '-m2');
-savefig([filename, '.fig']);
+% filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\constituents', ...
+%     sprintf('M2+M4_%s_line%d_ens%d_bin%d', date, line,ee,zz));
+% export_fig([filename, '.png'], '-m2');
+% savefig([filename, '.fig']);
 %% ------------------------------------------------------------------------
 %% pcolor sigma resid vel M2+M4
 residuals2 = squeeze(T_fit_result_all2(1, :, :));  %10x16
@@ -518,10 +518,10 @@ xlim([0,X(end)+0.025])
 % xlim([0,max(X)])
 title(strcat('Line=', num2str(line),'  Date=',(num2str(date))))
 % 
-filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit', ...
-    sprintf('residual_velocity_M2+M4_%s_line%d_sigma', date, line));
-export_fig([filename, '.png'], '-m2');
-savefig([filename, '.fig']);
+% filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit', ...
+%     sprintf('residual_velocity_M2+M4_%s_line%d_sigma', date, line));
+% export_fig([filename, '.png'], '-m2');
+% savefig([filename, '.fig']);
 %% ------------------------------------------------------------------------
 %% depth contour with resid vel M2M4
 figure('color','w')
@@ -539,10 +539,10 @@ ylabel('Depth (m)')
 title(strcat('Line=', num2str(line),'  Date=',(num2str(date))))
 set(gca, 'YDir', 'reverse')  
 
-filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\depth contour', ...
-    sprintf('residudal_velocity_M2+M4_%s_line%d_depth', date, line));
-export_fig([filename, '.png'], '-m2');
-savefig([filename, '.fig']);
+% filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\depth contour', ...
+%     sprintf('residudal_velocity_M2+M4_%s_line%d_depth', date, line));
+% export_fig([filename, '.png'], '-m2');
+% savefig([filename, '.fig']);
 %% ------------------------------------------------------------------------
 %% pcolor RMS M2+M4
 figure('color','w')
@@ -555,10 +555,10 @@ xlabel('Distance (km)')
 ylabel('Sigma Levels')
 title(strcat('Line=', num2str(line),'  Date=',(num2str(date))))
 
-filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\rmse', ...
-    sprintf('RMSE_M2+M4_%s_line%d_depth', date, line));
-export_fig([filename, '.png'], '-m2');
-savefig([filename, '.fig']);
+% filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\rmse', ...
+%     sprintf('RMSE_M2+M4_%s_line%d_depth', date, line));
+% export_fig([filename, '.png'], '-m2');
+% savefig([filename, '.fig']);
 %% ------------------------------------------------------------------------
 %% subplot DEPTH M2M4
 phase=cmocean('phase');
@@ -660,10 +660,10 @@ ylabel('Depth (m)')
 set(gca, 'YDir', 'reverse') 
 title('M4 Phase')
 % 
- filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit', ...
-    sprintf('subplot_M2+M4_%s_line%d_sigma', date, line));
-export_fig([filename, '.png'], '-m2');
-savefig([filename, '.fig']);
+%  filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit', ...
+%     sprintf('subplot_M2+M4_%s_line%d_sigma', date, line));
+% export_fig([filename, '.png'], '-m2');
+% savefig([filename, '.fig']);
 %% ------------------------------------------------------------------------
 %% 3rd Run: M2 + M4 + M6
 Tc_names = {'M2','M4','M6'};
@@ -795,34 +795,34 @@ ylabel('Velocity'); xlabel('T*'); title('Sum of tidal constituents')
 legend('Input parameters','Model Fit','Observed Data')
 sgtitle(sprintf('Ensemble = %d, Bin = %d', ee, zz))
 
-filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\constituents', ...
-    sprintf('M2+M4+M6_%s_line%d_ens%d_bin%d', date, line,ee,zz));
-export_fig([filename, '.png'], '-m2');
-savefig([filename, '.fig']);
+% filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\constituents', ...
+%     sprintf('M2+M4+M6_%s_line%d_ens%d_bin%d', date, line,ee,zz));
+% export_fig([filename, '.png'], '-m2');
+% savefig([filename, '.fig']);
 %% ------------------------------------------------------------------------
 %% export m2m4m6 
-[num_params3, n_bins, n_ens] = size(T_fit_result_all3);
-results_flat3 = reshape(permute(T_fit_result_all3, [3, 2, 1]), [], num_params3);
-% ens_list = repmat((1:n_ens)', n_bins, 1);%1–16, repeated 10x
-% bin_list = repelem((1:n_bins)', n_ens); %1repeated16x,2repeated16x,etc
-fit_table_M2M4M6 = array2table([ens_list, bin_list, results_flat3], ...
-    'VariableNames', {'Ensemble', 'Bin', ...
-                      'Residual', 'Phase_M2', 'Amp_M2', 'Phase_M4', 'Amp_M4','Phase_M6', 'Amp_M6'});
-sheetName = date + "_M2M4M6";
-base = 'C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\excel';
-filename = 'tidefitresult.xlsx';
-output_path = fullfile(base, filename);
-writetable(fit_table_M2M4M6, output_path, 'Sheet', sheetName);
+% [num_params3, n_bins, n_ens] = size(T_fit_result_all3);
+% results_flat3 = reshape(permute(T_fit_result_all3, [3, 2, 1]), [], num_params3);
+% % ens_list = repmat((1:n_ens)', n_bins, 1);%1–16, repeated 10x
+% % bin_list = repelem((1:n_bins)', n_ens); %1repeated16x,2repeated16x,etc
+% fit_table_M2M4M6 = array2table([ens_list, bin_list, results_flat3], ...
+%     'VariableNames', {'Ensemble', 'Bin', ...
+%                       'Residual', 'Phase_M2', 'Amp_M2', 'Phase_M4', 'Amp_M4','Phase_M6', 'Amp_M6'});
+% sheetName = date + "_M2M4M6";
+% base = 'C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\excel';
+% filename = 'tidefitresult.xlsx';
+% output_path = fullfile(base, filename);
+% writetable(fit_table_M2M4M6, output_path, 'Sheet', sheetName);
 %% ------------------------------------------------------------------------
 %% export m2m4m6 rms3
-rms_flat_M2M4M6 = T_fit_rms_all3(:);
-rms_table_M2M4M6 = table(ens_list, bin_list, rms_flat_M2M4M6, ...
-    'VariableNames', {'Ensemble', 'Bin', 'RMS_M2M4M6'});
-sheetName = date + "_RMS_M2M4M6";
-base = 'C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\excel';
-filename = 'rms.xlsx';
-output_path = fullfile(base, filename);
-writetable(rms_table_M2M4M6, output_path, 'Sheet', sheetName);
+% rms_flat_M2M4M6 = T_fit_rms_all3(:);
+% rms_table_M2M4M6 = table(ens_list, bin_list, rms_flat_M2M4M6, ...
+%     'VariableNames', {'Ensemble', 'Bin', 'RMS_M2M4M6'});
+% sheetName = date + "_RMS_M2M4M6";
+% base = 'C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\excel';
+% filename = 'rms.xlsx';
+% output_path = fullfile(base, filename);
+% writetable(rms_table_M2M4M6, output_path, 'Sheet', sheetName);
 %% ------------------------------------------------------------------------
 %% pcolor sigma resid vel M2+M4+M6
 residuals3 = squeeze(T_fit_result_all3(1, :, :));  
@@ -840,10 +840,10 @@ xlim([0,X(end)+0.025])
 % xlim([0,max(X)])
 title(strcat('Line=', num2str(line),'  Date=',(num2str(date))))
 % 
-filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit', ...
-    sprintf('residual_velocity_M2+M4+M6_%s_line%d_sigma', date, line));
-export_fig([filename, '.png'], '-m2');
-savefig([filename, '.fig']);
+% filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit', ...
+%     sprintf('residual_velocity_M2+M4+M6_%s_line%d_sigma', date, line));
+% export_fig([filename, '.png'], '-m2');
+% savefig([filename, '.fig']);
 %% ------------------------------------------------------------------------
 %% depth contour with resid vel M2+M4+M6
 figure('color','w')
@@ -861,10 +861,10 @@ ylabel('Depth (m)')
 title(strcat('Line=', num2str(line),'  Date=',(num2str(date))))
 set(gca, 'YDir', 'reverse')  
 
-filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\depth contour', ...
-    sprintf('residudal_velocity_M2+M4+M6_%s_line%d_depth', date, line));
-export_fig([filename, '.png'], '-m2');
-savefig([filename, '.fig']);
+% filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\depth contour', ...
+%     sprintf('residudal_velocity_M2+M4+M6_%s_line%d_depth', date, line));
+% export_fig([filename, '.png'], '-m2');
+% savefig([filename, '.fig']);
 %% ------------------------------------------------------------------------
 %% pcolor RMS M2M4M6 
 figure('color','w')
@@ -877,10 +877,10 @@ xlabel('Distance (km)')
 ylabel('Sigma Levels')
 title(strcat('Line=', num2str(line),'  Date=',(num2str(date))))
 % 
-filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\rmse', ...
-    sprintf('RMSE_M2+M4+M6_%s_line%d_depth', date, line));
-export_fig([filename, '.png'], '-m2');
-savefig([filename, '.fig']);
+% filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit\rmse', ...
+%     sprintf('RMSE_M2+M4+M6_%s_line%d_depth', date, line));
+% export_fig([filename, '.png'], '-m2');
+% savefig([filename, '.fig']);
 %% ------------------------------------------------------------------------
 %% subplot all deliverables M2M4M6
 phase=cmocean('phase');
@@ -1008,15 +1008,15 @@ ylabel('Depth (m)')
 set(gca, 'YDir', 'reverse') 
 title('M6 Phase')
 
-filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit', ...
-    sprintf('subplot_M2+M4+M6_%s_line%d_sigma', date, line));
-export_fig([filename, '.png'], '-m2');
-savefig([filename, '.fig']);
+% filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No7_bin_avg_sigma_tide_fit', ...
+%     sprintf('subplot_M2+M4+M6_%s_line%d_sigma', date, line));
+% export_fig([filename, '.png'], '-m2');
+% savefig([filename, '.fig']);
 %% ------------------------------------------------------------------------
 %% ------------------------------------------------------------------------
 %% save
-save(strcat('BI_','adcp_','L',num2str(line),'_',...
-    date,'_tide_','fit_','bin-avg_sigma','.mat'),'T_fit_result_all','T_fit_result_all2','T_fit_result_all3',...
-    'Mx_freq','along_sigma_clean','h_binavg_clean','time_binavg_clean',...
-    'Tc_names','Tc_periods','ss_all','ss_all2','ss_all3','h_mean','Z_real','Zgrid','Xgrid',...
-     'T_fit_rms_all','T_fit_rms_all2','T_fit_rms_all3')
+% save(strcat('BI_','adcp_','L',num2str(line),'_',...
+%     date,'_tide_','fit_','bin-avg_sigma','.mat'),'T_fit_result_all','T_fit_result_all2','T_fit_result_all3',...
+%     'Mx_freq','along_sigma_clean','h_binavg_clean','time_binavg_clean',...
+%     'Tc_names','Tc_periods','ss_all','ss_all2','ss_all3','h_mean','Z_real','Zgrid','Xgrid',...
+%      'T_fit_rms_all','T_fit_rms_all2','T_fit_rms_all3')
