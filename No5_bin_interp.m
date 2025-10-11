@@ -51,25 +51,25 @@ load BI_reference_line_L3.mat
 % load BI_adcp_L3_042023_cropped_grid_rotate.mat
 % load BI_adcp_L3_042023_cropped.mat
 
-date= "062823";
-off = 0.3;
-load BI_adcp_L3_062823_cropped_grid_rotate.mat
-load BI_adcp_L3_062823_cropped.mat
+% date= "062823";
+% off = 0.3;
+% load BI_adcp_L3_062823_cropped_grid_rotate.mat
+% load BI_adcp_L3_062823_cropped.mat
 
 % date= "071323";
 % off = 0.6;
-% load BI_adcp_L1_071323_cropped_grid_rotate.mat
-% load BI_adcp_L1_071323_cropped.mat
+% load BI_adcp_L3_071323_cropped_grid_rotate.mat
+% load BI_adcp_L3_071323_cropped.mat
 
 % date= "031524";
 % off = 0.6;
-% load BI_adcp_L1_031524_cropped_grid_rotate.mat
-% load BI_adcp_L1_031524_cropped.mat
+% load BI_adcp_L3_031524_cropped_grid_rotate.mat
+% load BI_adcp_L3_031524_cropped.mat
 % 
-% date= "031824";
-% off = 0.6;
-% load BI_adcp_L1_031824_cropped_grid_rotate.mat
-% load BI_adcp_L1_031824_cropped.mat
+date= "031824";
+off = 0.6;
+load BI_adcp_L3_031824_cropped_grid_rotate.mat
+load BI_adcp_L3_031824_cropped.mat
 
 %% redefine 'bins' and 'depth' adding offset
 
@@ -2203,8 +2203,8 @@ u_bininterp = NaN(size(Z,2), length(X), num_transects);
 v_bininterp = NaN(size(Z,2), length(X), num_transects);  
 h_bininterp = NaN(1,length(X), num_transects);
 time_bininterp = NaN(1,length(X), num_transects);
-% Nx_all = zeros(1,length(X), num_transects);
-% Nx_good = zeros(1,length(X), num_transects); 
+Nx_all = zeros(1,length(X), num_transects);
+Nx_good = zeros(1,length(X), num_transects); 
 
 %% interpolate internal nans (either this or next section)
 % % xx=1;
@@ -2276,7 +2276,6 @@ for xx = 1:size(along_t, 2)
 
     along_t{xx} = a_temp;
 end
-
 
 %% INTERPOLANT
 %add cross, u, v
@@ -2367,6 +2366,10 @@ u_bininterp(:,:,m) = u_bininterp_temp;
 v_bininterp(:,:,m) = v_bininterp_temp;
 h_bininterp(1,:,m) = h_bininterp_temp;
 time_bininterp(1,:,m) = t_bininterp_temp;
+
+% Nx_all(:,n,m) = length(a); %use to find number of ensembles (including bad ens.)
+% Nx_good(:,n,m) = length(find(~isnan(mean(u_t{m}(:,a),1,'omitnan')))); %check # of good velocity points
+
 clear x y %along_1 proj_1 x y F xmin xmax X_idx X_crop X_grd Z_grd along_grd_crop
 end
 
@@ -2378,17 +2381,41 @@ end
 % title('Interpolated Along-channel Velocity');
 % colorbar;
 
-%% produce QAQC fig?- need to adapt for interp script
+%% Plot depth-averaged, bin-interped velocity to check for points skewed by
+% outliers. Use bar graph to check data coverage.
+% need to adjust for interpolated nx_good/nx_all
 
-% %binavg:
-% for m = 1:num_transects
-% for n = 1:length(X) 
-%     a = find(proj_distance_t{m}>=X(n)-dx/2 & proj_distance_t{m}<X(n)+dx/2); %remove
-%     if ~isempty(a)
-%         Nx_all(:,n,m) = length(a); %use to find number of ensembles (including bad ens.)
-%         Nx_good(:,n,m) = length(find(~isnan(mean(u_t{m}(:,a),1,'omitnan')))); %check # of good velocity points
-%     end
-% end
+% for xx = 1:size(along_bininterp,3)
+% figure('color','w')
+% subplot(4,1,1)
+% plot(proj_distance_t{xx},mean(u_t{xx},1,'omitnan'))
+% hold on
+% plot(X,mean(u_bininterp(:,:,xx),1,'omitnan'),'ro--')
+% ylabel('Depth-averaged u')
+% title(sprintf('dx = %.1f m\n',dx*1e3))
+% sgtitle(strcat('transect = ',num2str(tt(xx))))
+% legend('original','bin-interpolated')
+% 
+% subplot(4,1,2)
+% plot(proj_distance_t{xx},mean(v_t{xx},1,'omitnan'))
+% hold on
+% plot(X,mean(v_bininterp(:,:,xx),1,'omitnan'),'ro--')
+% ylabel('Depth-averaged v')
+% % title(sprintf('dx = %.1f m\n',dx*1e3))
+% 
+% subplot(4,1,3)
+% plot(proj_distance_t{xx},depth_t{xx},'k'); hold on
+% plot(X,h_bininterp(:,:,xx),'m*:')
+% ylabel('bin-avg depth')
+% set(gca,'ydir','reverse','YLim',[0,max(depth)])
+% 
+% subplot(4,1,4)
+% bar(X,Nx_good(:,:,1))
+% ylabel('# good ensembles per horiz bin')
+% xlabel('Projected distance')
+% 
+%     % export_fig(fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\fig\Bin-Avg\L2\031524\skewed', ...
+%     % sprintf('transect%d.png', xx)), '-png','-m2');
 % end
 
 %% load bin-avg data for comparison
@@ -2446,7 +2473,7 @@ end
 % xlim([0,0.4])
 % sgtitle(sprintf('Transect %d', mplot)); 
 % 
-% % filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No5_bin_interp', ...
+% % filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No5_bin_interp\QA', ...
 % %     sprintf('Bin-Interp_QA_%s_line%d_transect%d', date, line, mplot));
 % % export_fig([filename, '.png'], '-m2');
 % % savefig([filename, '.fig']);
@@ -2454,44 +2481,44 @@ end
 
 
 %% figures to compare: clean data and bin-interp data
-% mplot=1;
-for mplot = 1:num_transects  
-figure('color','w');
-subplot(1,2,1);
-pcolorjw(proj_distance_t{mplot},bins,along_t{mplot})%73x359
-% shading flat
-hold on
-plot(proj_distance_t{mplot},depth_t{mplot},'k','LineWidth',2)
-set(gca, 'YDir', 'reverse');
-xlabel('ens');
-ylabel('bin');
-title('Along Velocity');
-colormap('redblue')
-colorbar;
-clim([-1.5,1.5])
-xlim([0,0.4])
-
-subplot(1,2,2);
-pcolorjw(X, Z, along_bininterp(:,:,mplot))  % from interpolated
-% shading flat
-hold on
-plot(X,h_bininterp(1,:,mplot),'k','LineWidth',2)
-set(gca, 'YDir', 'reverse');
-xlabel('Distance (m)');
-ylabel('Depth (m)');
-title('Interpolated Along Velocity');
-colormap('redblue')
-colorbar;
-clim([-1.5,1.5])
-xlim([0,0.4])
-sgtitle(sprintf('Transect %d', mplot)); 
-
+% % mplot=1;
+% for mplot = 1:num_transects  
+% figure('color','w');
+% subplot(1,2,1);
+% pcolorjw(proj_distance_t{mplot},bins,along_t{mplot})%73x359
+% % shading flat
+% hold on
+% plot(proj_distance_t{mplot},depth_t{mplot},'k','LineWidth',2)
+% set(gca, 'YDir', 'reverse');
+% xlabel('ens');
+% ylabel('bin');
+% title('Along Velocity');
+% colormap('redblue')
+% colorbar;
+% clim([-1.5,1.5])
+% xlim([0,0.4])
+% 
+% subplot(1,2,2);
+% pcolorjw(X, Z, along_bininterp(:,:,mplot))  % from interpolated
+% % shading flat
+% hold on
+% plot(X,h_bininterp(1,:,mplot),'k','LineWidth',2)
+% set(gca, 'YDir', 'reverse');
+% xlabel('Distance (m)');
+% ylabel('Depth (m)');
+% title('Interpolated Along Velocity');
+% colormap('redblue')
+% colorbar;
+% clim([-1.5,1.5])
+% xlim([0,0.4])
+% sgtitle(sprintf('Transect %d', mplot)); 
+% 
 % filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No5_bin_interp', ...
 %     sprintf('RawvsInterp_%s_line%d_transect%d', date, line, mplot));
 % export_fig([filename, '.png'], '-m2');
 % savefig([filename, '.fig']);
-
-end
+% 
+% end
 
 %% figures to compare CROSS
 % % mplot=1;
