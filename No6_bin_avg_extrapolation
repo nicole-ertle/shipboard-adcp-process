@@ -19,27 +19,41 @@
         % out)
             % ** if b is selected, there may be select ensembles that require 
             % using the second to last bin of data. 
-
+% Calculates instantaneous transport.
 % Conversion to sigma coordinates.
 
+% Note:  
+% along_extrap = polynomial fit to 0slope at surface extrap and log bottom extrap.
+% along_sigma = along_extrap mapped to sigma coordinates.
+% transport = transport for along_extrap for each ens/bin/transect.
+% transport_sum = sum of transport for a single value for each transect.
+% 
+% along_extrap_constant= constant surface extrap and bottom linear extrap.
+% along_sigma_cl = along_extrap_constant mapped to sigma coordinates.
+% Transport_cl = transport for along_extrap_constant for each ens/bin/transect.
+% Transport_cl_sum = sum of transport_cl for a single value for each transect.
+
 %% manually choose one survey:
+%% manually choose line
+line=4; %specify line #
 
-line=3; %specify line #
+%% MANUAL choose one survey: EDIT FILE NAMES (#)!!
+%% load correct file and CHECK LINE NUMBER!!
+% 
+date= "042023";
+load BI_adcp_L4_042023_cropped_grid_rotate_binavg.mat
 
-% date= "042023";
-% load BI_adcp_L3_042023_cropped_grid_rotate_binavg.mat
-
-date= "062823";
-load BI_adcp_L3_062823_cropped_grid_rotate_binavg.mat
+% date= "062823";
+% load BI_adcp_L2_062823_cropped_grid_rotate_binavg.mat
 
 % date= "071323";
-% load BI_adcp_L3_071323_cropped_grid_rotate_binavg.mat
+% load BI_adcp_L2_071323_cropped_grid_rotate_binavg.mat
 
 % date= "031524";
 % load BI_adcp_L2_031524_cropped_grid_rotate_binavg.mat
 
 % date= "031824";
-% load BI_adcp_L3_031824_cropped_grid_rotate_binavg.mat
+% load BI_adcp_L2_031824_cropped_grid_rotate_binavg.mat
 
 %% set up matrices 
 dz= 0.25;
@@ -293,42 +307,42 @@ end
 
 %% PLOT the difference between two surface extraps
  
-dv= along_extrap_constant - along_extrap;
-test_con= along_extrap_constant(:,:,1);
-test_opt= along_extrap(:,:,1);
-dv1=dv(:,:,1);
-
-dv_opt_ext = along_extrap - along_extrap_constant;
-dvoptext1=dv_opt_ext(:,:,1);
-
-% % figure
-xx=11; 
-% % Select 10 index numbers for vertical profiles
-profiles = 1:10;
-% profiles = 9:18;
-% profiles = 20:29;
-% profiles = 22;
-% profiles = 30:39;
-% profiles = 40:49;
-% profiles = 50:59;
-% profiles = 60:69;
-% profiles = 70:79;
-% profiles = 80:89;
-% profiles = 90:99;
-% profiles = 100:109;
-
-figure('color','w')
-for p = 1:10
-    subplot(2,5,p)
-    plot(dv_opt_ext(:,profiles(p),xx),z,'ko:')
-    hold on
-    % plot(along_binavg(:,profiles(p),xx),bins,'b*-')
-    % plot(0,h_binavg(:,profiles(p),xx),'ks','markerfacecolor','k')
-    set(gca,'YDir','reverse','XAxisLocation','top')
-    ylabel('Depth (m)')
-    % xlabel('Alongchannel velocity (m/s)')
-    title(strcat('profile = ',num2str(profiles(p))))
-end
+% dv= along_extrap_constant - along_extrap;
+% test_con= along_extrap_constant(:,:,1);
+% test_opt= along_extrap(:,:,1);
+% dv1=dv(:,:,1);
+% 
+% dv_opt_ext = along_extrap - along_extrap_constant;
+% dvoptext1=dv_opt_ext(:,:,1);
+% 
+% % % figure
+% xx=11; 
+% % % Select 10 index numbers for vertical profiles
+% profiles = 1:10;
+% % profiles = 9:18;
+% % profiles = 20:29;
+% % profiles = 22;
+% % profiles = 30:39;
+% % profiles = 40:49;
+% % profiles = 50:59;
+% % profiles = 60:69;
+% % profiles = 70:79;
+% % profiles = 80:89;
+% % profiles = 90:99;
+% % profiles = 100:109;
+% 
+% figure('color','w')
+% for p = 1:10
+%     subplot(2,5,p)
+%     plot(dv_opt_ext(:,profiles(p),xx),z,'ko:')
+%     hold on
+%     % plot(along_binavg(:,profiles(p),xx),bins,'b*-')
+%     % plot(0,h_binavg(:,profiles(p),xx),'ks','markerfacecolor','k')
+%     set(gca,'YDir','reverse','XAxisLocation','top')
+%     ylabel('Depth (m)')
+%     % xlabel('Alongchannel velocity (m/s)')
+%     title(strcat('profile = ',num2str(profiles(p))))
+% end
 
 
 %% PLOTS x sec comparing log and lin surface extraps
@@ -483,9 +497,9 @@ end
 %1) constant (surface) and linear (bottom) extrapolation
 %2) polynomial- 0slope (surface) and logarithmic (bottom) extrapolation
 % 
-xx=12;
+% xx=11;
 % % Select 10 index numbers for vertical profiles
-profiles = 1:10;
+% profiles = 2:11;
 % % profiles = 9:18;
 % % profiles = 20:29;
 % % profiles = 22;
@@ -498,47 +512,121 @@ profiles = 1:10;
 % % profiles = 90:99;
 % % profiles = 100:109;
 % 
-figure('color','w')
-for p = 1:10
-    subplot(2,5,p)
-    plot(along_extrap(:,profiles(p),xx),z,'mo:')
-    hold on
-    plot(along_extrap_constant(:,profiles(p),xx),z,'g.:')
-    plot(along_binavg(:,profiles(p),xx),bins,'b*-')
-    plot(0,h_binavg(:,profiles(p),xx),'ks','markerfacecolor','k')
-    set(gca,'YDir','reverse','XAxisLocation','top')
-    ylabel('Depth (m)')
-    xlabel('Alongchannel velocity (m/s)')
-    title(strcat('profile = ',num2str(profiles(p))))
-    legend('poly/log','constant/lin','data','H','Location','best')
-end
-sgtitle(strcat('Transect =', num2str(xx)));
+% figure('color','w')
+% for p = 1:10
+%     subplot(2,5,p)
+%     plot(along_extrap(:,profiles(p),xx),z,'mo:')
+%     hold on
+%     plot(along_extrap_constant(:,profiles(p),xx),z,'g.:')
+%     plot(along_mid(:,profiles(p),xx),z,'b.:')
+%     plot(along_binavg(:,profiles(p),xx),bins,'b*-')
+%     plot(0,h_binavg(:,profiles(p),xx),'ks','markerfacecolor','k')
+%     set(gca,'YDir','reverse','XAxisLocation','top')
+%     ylabel('Depth (m)')
+%     xlabel('Alongchannel velocity (m/s)')
+%     title(strcat('profile = ',num2str(profiles(p))))
+%     legend('poly/log','constant/lin','data','H','Location','best')
+% end
+% sgtitle(strcat('Transect =', num2str(xx)));
 
 %% PLOT just along and saves to folder
 
-for xx = 1:size(along_binavg,3)
-% xx=7;
-figure('color', 'white')
-pcolor(X,z,along_extrap(:,:,xx))
-hold on
-plot(X,h_binavg(:,:,xx),'k','LineWidth',2)
-shading flat; 
-cb=colorbar; ylabel(cb,'along channel velocity (m/s)')
-caxis([-1.5,1.5])
-set(gca,'ydir','reverse','fontsize',12)
-ax=gca;
-set(gca,'xlim',[0,0.59]);%0.36])%0.45]) %l2
-ax.YDir='reverse';
-ax.YLim=[0,16];
-colormap(redblue)
-xlabel('Projected Distance (km)')
-ylabel('Depth')
-title(strcat('Date= ', date, ' Transect=', num2str(xx)));
+% for xx = 1:size(along_binavg,3)
+% % xx=7;
+% figure('color', 'white')
+% pcolor(X,z,along_extrap(:,:,xx))
+% hold on
+% plot(X,h_binavg(:,:,xx),'k','LineWidth',2)
+% shading flat; 
+% cb=colorbar; ylabel(cb,'along channel velocity (m/s)')
+% caxis([-1.5,1.5])
+% set(gca,'ydir','reverse','fontsize',12)
+% ax=gca;
+% set(gca,'xlim',[0,max(X)])
+% % set(gca,'xlim',[0,0.59]);%0.36])%0.45]) %l2
+% ax.YDir='reverse';
+% ax.YLim=[0,16];
+% colormap(redblue)
+% xlabel('Projected Distance (km)')
+% ylabel('Depth')
+% title(strcat('Date= ', date, ' Transect=', num2str(xx)));
+% 
+%     filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No6_bin_avg_extrap', ...
+%     sprintf('%s_line%d_transect%d', date, line, xx));
+% export_fig([filename, '.png'], '-m2');
+% savefig([filename, '.fig']);
+% 
+% end
 
-% export_fig(fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\fig\Progress\15Mar24\Line2', ...
-%     sprintf('transect%d.png', xx)), '-png','-m2');
+%% PLOT just along (CL) and saves to folder
 
+% for xx = 1:size(along_binavg,3)
+% % xx=7;
+% figure('color', 'white')
+% pcolor(X,z,along_extrap_constant(:,:,xx))
+% hold on
+% plot(X,h_binavg(:,:,xx),'k','LineWidth',2)
+% shading flat; 
+% cb=colorbar; ylabel(cb,'along channel velocity (m/s)')
+% caxis([-1.5,1.5])
+% set(gca,'ydir','reverse','fontsize',12)
+% ax=gca;
+% set(gca,'xlim',[0,max(X)])
+% ax.YDir='reverse';
+% ax.YLim=[0,16];
+% colormap(redblue)
+% xlabel('Projected Distance (km)')
+% ylabel('Depth')
+% title(strcat('Date= ', date, ' Transect=', num2str(xx)));
+% 
+%     filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No6_bin_avg_extrap\constant-linear', ...
+%     sprintf('%s_line%d_transect%d', date, line, xx));
+% export_fig([filename, '.png'], '-m2');
+% savefig([filename, '.fig']);
+% 
+% end
+
+%% ------------------------------------------------------------------------
+%% add instantaneous transports 
+
+% along extrap (poly/log)
+% X is l (25m)
+l = (X(2) - X(1)) * 1000; %km to m; 25
+w = dz; %already in m! no need to /100; 0.25
+area = l*w; %6.25
+
+transport = NaN(size(along_extrap));
+for xx = 1:size(along_extrap, 3) %#t
+    for nn = 1:length(X) 
+        for zz = 1:length(along_extrap)
+            transport(zz,nn,xx) = along_extrap(zz,nn,xx) * area;
+        end
+    end
 end
+
+for xx = 1:size(along_extrap, 3) 
+transport_sum(xx) = nansum(nansum(transport(:,:,xx)));
+%sum cols then rows
+end
+
+% along extrap constant linear
+transport_cl = NaN(size(along_extrap_constant));
+for xx = 1:size(along_extrap_constant, 3) 
+    for nn = 1:length(X)
+        for zz = 1:length(along_extrap_constant)
+            transport_cl(zz,nn,xx) = along_extrap_constant(zz,nn,xx) * area;
+        end
+    end
+end
+
+for xx = 1:size(along_extrap, 3) 
+transport_cl_sum(xx) = nansum(nansum(transport_cl(:,:,xx)));
+%sum cols then rows
+end
+
+%estimated mean transport:
+transport_avg= nanmean(transport_sum)
+transport_cl_avg= nanmean(transport_cl_sum)
 
 %% Convert depth to sigma coordinates
 
@@ -578,6 +666,7 @@ for n=idx_start_interp(xx):idx_end_interp(xx)
 end
 end
 end
+
 %% single profile fig
 
 % n=7;
@@ -594,41 +683,118 @@ end
 % xlabel('Alongchannel velocity (m/s)')
 % title(strcat('profile = ',num2str(n),' transect =', num2str(xx)));
 
-%% PLOTS: x sec figs
+%% PLOTS: Sigma x sec figs and save
 
-for xx = 1:size(along_binavg,3)
-figure('color','w')
-subplot(2,1,1)
-pcolor(X,z,along_extrap(:,:,xx))
-hold on
-plot(X,h_binavg(:,:,xx),'k','linewidth',2)
-shading interp
-cb = colorbar; ylabel(cb,'along-channel velocity (m/s)')
-caxis([-1.5,1.5])
-ax=gca;
-set(gca,'YDir','reverse','YLim',[0,16])
-set(gca,'xlim',[0,max(X)])
-colormap(redblue)
-xlabel('Distance (km)')
-ylabel('Depth (m)')
-title('Final Velocity')
+% for xx = 1:size(along_binavg,3)
+% figure('color','w')
+% subplot(2,1,1)
+% pcolor(X,z,along_extrap(:,:,xx))
+% hold on
+% plot(X,h_binavg(:,:,xx),'k','linewidth',2)
+% shading interp
+% cb = colorbar; ylabel(cb,'along-channel velocity (m/s)')
+% caxis([-1.5,1.5])
+% ax=gca;
+% set(gca,'YDir','reverse','YLim',[0,16])
+% set(gca,'xlim',[0,max(X)])
+% colormap(redblue)
+% xlabel('Distance (km)')
+% ylabel('Depth (m)')
+% title('Final Velocity')
+% 
+% subplot(2,1,2) 
+% pcolor(X,sigma_levels,along_sigma(:,:,xx))
+% cb = colorbar; ylabel(cb,'along-channel velocity (m/s)')
+% colormap(redblue)
+% caxis([-1.5,1.5])
+% xlabel('Distance (km)')
+% ylabel('Depth (m)')
+% shading interp
+% title('Sigma Coords')
+% sgtitle(strcat('Transect =', num2str(xx)));
+% 
+%     filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No6_bin_avg_extrap\sigma', ...
+%     sprintf('%s_line%d_transect%d', date, line, xx));
+% export_fig([filename, '.png'], '-m2');
+% savefig([filename, '.fig']);
+% 
+% end
 
-subplot(2,1,2) 
-pcolor(X,sigma_levels,along_sigma(:,:,xx))
-cb = colorbar; ylabel(cb,'along-channel velocity (m/s)')
-colormap(redblue)
-caxis([-1.5,1.5])
-xlabel('Distance (km)')
-ylabel('Depth (m)')
-shading interp
-title('Sigma Coords')
-sgtitle(strcat('Transect =', num2str(xx)));
+%% Convert depth to sigma coordinates Constant Linear
+
+N_levels = 10; %number of vertical levels
+sigma_levels = linspace(1,0,N_levels);
+along_sigma_cl = NaN(N_levels,width(along_extrap_constant),size(along_binavg,3));
+cross_sigma_cl = NaN(N_levels,width(cross_extrap_constant),size(along_binavg,3));
+
+for xx= 1:size(along_binavg,3)
+for n=idx_start_interp(xx):idx_end_interp(xx)
+    sig = (h_binavg(:,n,xx)-z)/h_binavg(:,n,xx);
+    if all(isnan(sig))
+        continue; %if true (all nans) then with skip rest of loop
+    else
+    d= find(sig>nearbottom); 
+    vel_v = interp1([sig(d);0],[along_extrap_constant(d,n,xx);0],sigma_levels,'linear');%,'extrap');
+    vel_v(end)=0; %seafloor
+    % vel_u = interp1([sig(d);0],[cross_extrap(d,n,xx);0],sigma_levels,'linear');
+    % vel_u(end)=0; %seafloor
+    % vel_v(1)=along_extrap_constant(1,n,xx); %surface
+    % vel_u(1)=cross_extrap_constant(1,n,xx); 
+
+    along_sigma_cl(:,n,xx)=vel_v(:);
+    % cross_sigma_cl(:,n,xx)=vel_u(:);
+
+end
+end
 end
 
+%% PLOTS: Sigma CL x sec figs and save
 
+% for xx = 1:size(along_binavg,3)
+% figure('color','w')
+% subplot(2,1,1)
+% pcolor(X,z,along_extrap_constant(:,:,xx))
+% hold on
+% plot(X,h_binavg(:,:,xx),'k','linewidth',2)
+% shading interp
+% cb = colorbar; ylabel(cb,'along-channel velocity (m/s)')
+% caxis([-1.5,1.5])
+% ax=gca;
+% set(gca,'YDir','reverse','YLim',[0,16])
+% set(gca,'xlim',[0,max(X)])
+% colormap(redblue)
+% xlabel('Distance (km)')
+% ylabel('Depth (m)')
+% title('Final Velocity')
+% 
+% subplot(2,1,2) 
+% pcolor(X,sigma_levels,along_sigma_cl(:,:,xx))
+% cb = colorbar; ylabel(cb,'along-channel velocity (m/s)')
+% colormap(redblue)
+% caxis([-1.5,1.5])
+% xlabel('Distance (km)')
+% ylabel('Depth (m)')
+% shading interp
+% title('Sigma Coords')
+% sgtitle(strcat('Transect =', num2str(xx)));
+% 
+%     filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No6_bin_avg_extrap\constant-linear\sigma', ...
+%     sprintf('%s_line%d_transect%d', date, line, xx));
+% export_fig([filename, '.png'], '-m2');
+% savefig([filename, '.fig']);
+% 
+% end
 %% SAVE variables
 % save(strcat('BI_','adcp_','L',num2str(line),'_',...
 %     date,'_cropped_','grid_','rotate_','binavg_','extrap','.mat'),'along_extrap',...
 %     'along_extrap_constant','z','height_extrap','idx_start_interp','idx_end_interp',...
-%     'along_sigma','sigma_levels','X','time_binavg','h_binavg')
+%     'along_sigma','along_sigma_cl','sigma_levels','X','time_binavg','h_binavg','transport','transport_sum',...
+%      'transport_cl','transport_cl_sum')
 
+% save(strcat('BI_','adcp_','L',num2str(line),'_',...
+%     date,'_cropped_','grid_','rotate_','binavg_','extrap','.mat'),'transport',...
+%     'transport_sum','transport_cl','transport_cl_sum','-append')
+
+%% See Nox_plots.m
+% on script to plot average instantaneous transport per transect over time 
+% both extrap methods and compare difference; calc % difference.
