@@ -17,7 +17,19 @@
         % a. use second to last bin for logarithmic extrapolation
         % b. use the last bin of data for linear extrapolation
 
+% Calculates instantaneous transport.
 % Conversion to sigma coordinates.
+
+% Note:  
+% along_extrap = polynomial fit to 0slope at surface extrap and log bottom extrap.
+% along_sigma = along_extrap mapped to sigma coordinates.
+% transport = transport for along_extrap for each ens/bin/transect.
+% transport_sum = sum of transport for a single value for each transect.
+% 
+% along_extrap_constant= constant surface extrap and bottom linear extrap.
+% along_sigma_cl = along_extrap_constant mapped to sigma coordinates.
+% Transport_cl = transport for along_extrap_constant for each ens/bin/transect.
+% Transport_cl_sum = sum of transport_cl for a single value for each transect.
 
 %% manually choose one survey:
 
@@ -33,7 +45,7 @@ load BI_adcp_L3_042023_cropped_grid_rotate_bininterp.mat
 % load BI_adcp_L3_071323_cropped_grid_rotate_bininterp.mat
 
 % date= "031524";
-% load BI_adcp_L2_031524_cropped_grid_rotate_bininterp.mat
+% load BI_adcp_L3_031524_cropped_grid_rotate_bininterp.mat
 
 % date= "031824";
 % load BI_adcp_L3_031824_cropped_grid_rotate_bininterp.mat
@@ -180,10 +192,147 @@ cross_extrap_constant(1:e-1,n,xx)= cross_extrap_constant(e,n,xx);
 end
 end
 
+%% ------------------------------------------------------------------------
+%% testing surface extraps
+% xx=10;n=3;
+%starting index:
+start_idx = fgb_int(:,n, xx); 
+%skip short profiles
+a = find(~isnan(along_bininterp(:,n,xx)), 1, 'first');  
+fgb_int(:,n, xx) = a;
+b = find(~isnan(along_bininterp(:,n,xx)), 1, 'last');
+lgb_int(:,n, xx) = b;
+%add more bins...from +3  7**11*****
+x_data = bins(fgb_int(:,n,xx):fgb_int(:,n,xx)+3); 
+v_data = along_bininterp(fgb_int(:,n,xx):fgb_int(:,n,xx)+3,n,xx); 
+%% ------------------------------------------------------------------------
+%% Choose one of the below options ----------------------------------------
+%% ------------------------------------------------------------------------
+%% try testing intial guesses with polyfit
+
+p = polyfit(x_data, v_data, 2);  % p = [a, b, c]
+x_surface = min(x_data);  % Or wherever your slope constraint applies
+a0 = p(1);
+c0 = p(3);
+initial_guess = [a0, c0];
+fun = @(coeff) sum((coeff(1)*x_data.^2 - 2*coeff(1)*x_surface*x_data + coeff(2) - v_data).^2, 'all');
+
+coefficients = fminsearch(fun, initial_guess);
+
+
+%% try this; it removes the b coeff. still looks like a straight line even though be is actually v small
+x_surface = min(x_data);% Define surface location
+
+% Custom cost function with b = -2a*x_surface
+fun = @(coeff) sum((coeff(1)*x_data.^2 - 2*coeff(1)*x_surface*x_data + coeff(2) - v_data).^2, 'all');
+
+initial_guess = [1, 0];  % [a, c]
+coefficients = fminsearch(fun, initial_guess);
+
+% Recover coefficients
+% a = coef_opt(1);
+% b = -2*a*x_surface;
+% c = coef_opt(2);
+% coefficients = [a, b, c];
+% disp(coefficients)
+
+a_v(:,n,xx) = coefficients(1);
+b_v(:,n,xx) = -2*a_v(:,n,xx)*x_surface;
+c_v(:,n,xx) = coefficients(2);
+%calculate surface points
+d = find(z <= bins(fgb_int(:,n,xx)));
+z_surf = z(d);
+v_surf = a_v(:,n,xx)*z_surf.^2 + b_v(:,n,xx)*z_surf + c_v(:,n,xx); %same # which is the c_v coefficient3
+
+
+% fun = @(coeff) sum((coeff(1) * x_data.^2 + coeff(2) * x_data + coeff(3) - v_data).^2, 'all');
+% initial_guess = [1, 1, 1];
+% 
+% x_surface = min(x_data);  % Or 0, or wherever your "surface" is
+% Aeq = [2*x_surface, 1, 0];  % Enforce slope = 0 at x_surface
+% Beq = 0;
+% 
+% options = optimset('fmincon');
+% coefficients = fmincon(fun, initial_guess, [], [], Aeq, Beq, [], [], [], options);
+% 
+% %%
+% 
+% x_fit = linspace(min(x_data), max(x_data), 100);
+% v_fit = coefficients(1)*x_fit.^2 + coefficients(2)*x_fit + coefficients(3);
+% 
+% plot(x_data, v_data, 'bo'); hold on
+% plot(x_fit, v_fit, 'r-'); hold off
+% legend('Data', 'Fitted Polynomial');
+
+
+
+%% 1. Constrained to 0 with optimization ----------------------------------
+fun = @(coeff) sum((coeff(1) * x_data.^2 + coeff(2) * x_data + coeff(3) - v_data).^2,'all');
+initial_guess = [1, 1, 1]; % Initial guess for coefficients [a, b, c]
+% initial_guess = [0, 0, mean(v_data)]; %same result
+
+% Constraint: b (coeff(2)) should be 0
+Aeq = [0, 1, 0]; % Coefficient matrix for linear inequality constraint;enforce coeff(2) = 0
+Beq = 0; % Right-hand side of the constraint; must be 0
+
+% Options for optimization
+options = optimset('fmincon');
+% options.Display = 'iter' % Display optimization progress
+
+% Perform constrained optimization
+coefficients = NaN(1,3);
+coefficients = fmincon(fun, initial_guess, [], [], Aeq, Beq, [], [], [], options);
+
+%   FMINCON attempts to solve problems of the form:
+%    min F(X)  subject to:  A*X  <= B, Aeq*X  = Beq (linear constraints)
+%     X                     C(X) <= 0, Ceq(X) = 0   (nonlinear constraints)
+%                              LB <= X <= UB  
+%   X = FMINCON(FUN,X0,A,B,Aeq,Beq) minimizes FUN subject to the linear 
+%   equalities Aeq*X = Beq as well as A*X <= B. (Set A=[] and B=[] if no 
+%   inequalities exist.)
+%% ------------------------------------------------------------------------
+%% 2. Unconstrained no optimization ---------------------------------------
+coefficients = polyfit(x_data(:), v_data, 2);  % no slope constraint
+%% ------------------------------------------------------------------------
+%% 3. testing soft > hard constraints w optimization ----------------------
+initial_guess = [0, 0, mean(v_data)];
+fun = @(coeff) sum((coeff(1)*x_data.^2 + coeff(2)*x_data + coeff(3) - v_data).^2, 'all') ...
+               + 1e5 * coeff(2)^2;  % 1e3 same as no constraint, try 1e5, SAME
+options = optimset('fmincon');
+coefficients = fmincon(fun, initial_guess, [], [], [], [], [], [], [], options);
+%% ------------------------------------------------------------------------
+%% extract coefficients ---------------------------------------------------
+a_v(:,n,xx) = coefficients(1);
+b_v(:,n,xx) = coefficients(2);
+c_v(:,n,xx) = coefficients(3);
+%calculate surface points
+d = find(z <= bins(fgb_int(:,n,xx)));
+z_surf = z(d);
+v_surf = a_v(:,n,xx)*z_surf.^2 + b_v(:,n,xx)*z_surf + c_v(:,n,xx); %same # which is the c_v coefficient3
+%% ------------------------------------------------------------------------
+%% plots to test profiles
+figure('color','w')
+plot(v_data,x_data,'r.-')
+hold on
+plot(v_surf,z_surf,'bo-')
+set(gca, 'YDir', 'reverse')
+%%
+
+plot(v_surf,z_surf,'c*-')
+legend('data','constrained: zero slope','unconstrained')
+
+title('transect xx=10 profile n=3')
+
+xlim([-0.85,-0.1])
+ylim([0,4])
+%% ------------------------------------------------------------------------
+%% ------------------------------------------------------------------------
+%% ------------------------------------------------------------------------
 %% surface extrapolation: Fit parabola to shallowest meter * need to account for cross vel from here on
 % four data points, requiring zero slope at surface using optimization 
 % see parabola_fit_example_zero_slope.m
 % constant extrap for short profiles
+% xx=10;n=3;
 
 for xx = 1:size(along_bininterp, 3) 
 for n=idx_start_interp(xx):idx_end_interp(xx)
@@ -191,8 +340,8 @@ for n=idx_start_interp(xx):idx_end_interp(xx)
     %starting index:
     start_idx = fgb_int(:, n, xx); 
 
-    %check if at least 5 data point avail: 
-        if start_idx + 4 > numel(bins)
+    %check if at least 5 data point avail: *test 9 *test 13
+        if start_idx + 4 > numel(bins) %4 %8 %12
             fprintf('Profile n=%d in transect xx=%d skipped: not enough data points.\n', n, xx);
             continue
         end
@@ -212,13 +361,13 @@ for n=idx_start_interp(xx):idx_end_interp(xx)
         b = find(~isnan(along_bininterp(:,n,xx)), 1, 'last');
         if isempty(b)
             lgb_int(:, n, xx) = NaN;
-        elseif b <= 5   
+        elseif b <= 5   %5 *13****
             fprintf('Profile n=%d in transect xx=%d skipped from extrapolation (not enough bins).\n', n, xx);
             continue  
         else
             lgb_int(:, n, xx) = b;
         end
-
+% add more bins...from +3  7**11*****
     x_data = bins(fgb_int(:,n,xx):fgb_int(:,n,xx)+3); 
     v_data = along_bininterp(fgb_int(:,n,xx):fgb_int(:,n,xx)+3,n,xx); 
     % u_data = cross_bininterp(fgb_int(:,n,xx):fgb_int(:,n,xx)+3,n,xx); 
@@ -226,10 +375,11 @@ for n=idx_start_interp(xx):idx_end_interp(xx)
     % Define the optimization problem
     fun = @(coeff) sum((coeff(1) * x_data.^2 + coeff(2) * x_data + coeff(3) - v_data).^2,'all');
     initial_guess = [1, 1, 1]; % Initial guess for coefficients [a, b, c]
+    % initial_guess = [0, 0, mean(v_data)]; %same result
 
     % Constraint: b (coeff(2)) should be 0
-    A = [0, 1, 0]; % Coefficient matrix for linear inequality constraint
-    b = 0; % Right-hand side of the constraint; must be 0
+    Aeq = [0, 1, 0]; % Coefficient matrix for linear inequality constraint;enforce coeff(2) = 0
+    Beq = 0; % Right-hand side of the constraint; must be 0
 
     % Options for optimization
     options = optimset('fmincon');
@@ -237,9 +387,9 @@ for n=idx_start_interp(xx):idx_end_interp(xx)
 
     % Perform constrained optimization
     coefficients = NaN(1,3);
-    coefficients = fmincon(fun, initial_guess, [], [], A, b, [], [], [], options);
-    
-    % Extract optimized coefficients
+    coefficients = fmincon(fun, initial_guess, [], [], Aeq, Beq, [], [], [], options);
+
+    % extract coefficients
     a_v(:,n,xx) = coefficients(1);
     b_v(:,n,xx) = coefficients(2);
     c_v(:,n,xx) = coefficients(3);
@@ -274,7 +424,7 @@ for n=idx_start_interp(xx):idx_end_interp(xx)
         b = find(~isnan(along_bininterp(:,n,xx)), 1, 'last');
         if isempty(b)
             lgb_int(:, n, xx) = NaN;
-        elseif b > 5   
+        elseif b > 5 %***********  check to see if this should be 4
             %fprintf('Profile n=%d in transect xx=%d skipped from CONSTANT extrapolation: log used\n', n, xx);
             continue  
         else
@@ -287,6 +437,29 @@ for n=idx_start_interp(xx):idx_end_interp(xx)
             % cross_extrap(1:d-1,n,xx)= cross_extrap(d,n,xx);
 end
 end
+
+%% plots to test profiles
+figure('color','w')
+plot(v_data,x_data,'r.-')
+hold on
+plot(v_surf,z_surf,'bo-')
+set(gca, 'YDir', 'reverse')
+
+
+plot(v_surf,z_surf,'m*-')
+legend('data','constrained: zero slope','unconstrained')
+
+title('transect xx=10 profile n=3')
+
+xlim([-0.85,-0.1])
+ylim([0,4])
+
+%%
+disp(coefficients)
+    % 0.0000         0    1.2830
+    % 0.1287   -0.5466   -0.1125
+
+
 
 %% PLOT the difference between two surface extraps
 % 
@@ -492,7 +665,7 @@ end
 %1) constant (surface) and linear (bottom) extrapolation
 %2) polynomial- 0slope (surface) and logarithmic (bottom) extrapolation
 % 
-xx=14;
+xx=10;
 % % Select 10 index numbers for vertical profiles
 profiles = 2:11;
 % profiles = 10:16;
@@ -513,7 +686,8 @@ for p = 1:10
     plot(along_extrap(:,profiles(p),xx),z,'mo:')
     hold on
     plot(along_extrap_constant(:,profiles(p),xx),z,'g.:')
-    plot(along_bininterp(:,profiles(p),xx),bins,'b*-')
+    plot(along_mid(:,profiles(p),xx),z,'b.:')
+    % plot(along_bininterp(:,profiles(p),xx),bins,'b*-')
     plot(0,h_bininterp(:,profiles(p),xx),'ks','markerfacecolor','k')
     set(gca,'YDir','reverse','XAxisLocation','top')
     ylabel('Depth (m)')
@@ -544,15 +718,50 @@ xlabel('Projected Distance (km)')
 ylabel('Depth (m)')
 title(strcat('Date= ', date, ' Transect=', num2str(xx)));
 
-% filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No6_bin_interp_extrap', ...
-%     sprintf('Along_%s_line%d_transect%d', date, line, xx));
-% export_fig([filename, '.png'], '-m2');
-% savefig([filename, '.fig']);
+filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No6_bin_interp_extrap', ...
+    sprintf('Along_%s_line%d_transect%d', date, line, xx));
+export_fig([filename, '.png'], '-m2');
+savefig([filename, '.fig']);
 
 end
 
-%% Convert depth to sigma coordinates
+%% add instantaneous transports
+% along extrap (poly/log)
+% X is l (25m)
+l = (X(2) - X(1)) * 1000; %km to m
+w = dz/100; %25cm to m
+area = l*w;
 
+transport = NaN(size(along_extrap));
+for xx = 1:size(along_extrap, 3) 
+    for nn = 1:length(X)
+        for zz = 1:length(along_extrap)
+            transport(zz,nn,xx) = along_extrap(zz,nn,xx) * area;
+        end
+    end
+end
+
+for xx = 1:size(along_extrap, 3) 
+transport_sum(xx) = nansum(nansum(transport(:,:,xx)));
+%sum cols then rows
+end
+
+% along extrap constant linear
+transport_cl = NaN(size(along_extrap_constant));
+for xx = 1:size(along_extrap_constant, 3) 
+    for nn = 1:length(X)
+        for zz = 1:length(along_extrap_constant)
+            transport_cl(zz,nn,xx) = along_extrap_constant(zz,nn,xx) * area;
+        end
+    end
+end
+
+for xx = 1:size(along_extrap_constant, 3) 
+transport_sum_cl(xx) = nansum(nansum(transport_cl(:,:,xx)));
+%sum cols then rows
+end
+
+%% Convert depth to sigma coordinates
 N_levels = 10; %number of vertical levels
 sigma_levels = linspace(1,0,N_levels);
 along_sigma = NaN(N_levels,width(along_extrap),size(along_bininterp,3));
@@ -605,7 +814,7 @@ end
 % xlabel('Alongchannel velocity (m/s)')
 % title(strcat('profile = ',num2str(n),' transect =', num2str(xx)));
 
-%% PLOTS: x sec figs
+%% PLOTS: Sigma x sec figs
 
 for xx = 1:size(along_bininterp,3)
 figure('color','w')
@@ -635,16 +844,85 @@ xlabel('Distance (km)')
 ylabel('Depth (m)')
 shading flat
 title('Sigma Coords')
+% set(gca, 'YDir', 'reverse') 
 sgtitle(strcat('Transect =', num2str(xx)));
 % 
-% filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No6_bin_interp_extrap', ...
+% filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No6_bin_interp_extrap\sigma', ...
 %     sprintf('Along_Sigma_%s_line%d_transect%d', date, line, xx));
 % export_fig([filename, '.png'], '-m2');
 % savefig([filename, '.fig']);
 
 end
+
+%% Convert depth to sigma coordinates CONSTANT LIN EXTRAP
+N_levels = 10; %number of vertical levels
+sigma_levels = linspace(1,0,N_levels);
+along_sigma_cl = NaN(N_levels,width(along_extrap_constant),size(along_bininterp,3));
+cross_sigma_cl = NaN(N_levels,width(cross_extrap_constant),size(along_bininterp,3));
+
+for xx= 1:size(along_bininterp,3)
+for n=idx_start_interp(xx):idx_end_interp(xx)
+    sig = (h_bininterp(:,n,xx)-z)/h_bininterp(:,n,xx);
+    if all(isnan(sig))
+        continue; %if true (all nans) then with skip rest of loop
+    else
+    d= find(sig>nearbottom); 
+    vel_v = interp1([sig(d);0],[along_extrap(d,n,xx);0],sigma_levels,'linear');%,'extrap');
+    vel_v(end)=0; %seafloor
+    % vel_u = interp1([sig(d);0],[cross_extrap(d,n,xx);0],sigma_levels,'linear');
+    % vel_u(end)=0; %seafloor
+    % vel_v(1)=along_extrap_constant(1,n,xx); %surface
+    % vel_u(1)=cross_extrap_constant(1,n,xx); 
+
+    along_sigma_cl(:,n,xx)=vel_v(:);
+    % cross_sigma_cl(:,n,xx)=vel_u(:);
+end
+end
+end
+
+%% PLOTS: Sigma constant linear x sec figs
+
+for xx = 1:size(along_bininterp,3)
+figure('color','w')
+subplot(2,1,1)
+pcolorjw(X,z,along_extrap_constant(:,:,xx))
+hold on
+plot(X,h_bininterp(:,:,xx),'k','linewidth',2)
+shading flat
+cb = colorbar; ylabel(cb,'along-channel velocity (m/s)')
+caxis([-1.5,1.5])
+ax=gca;
+set(gca,'YDir','reverse','YLim',[0,16])
+set(gca,'xlim',[0,max(X)])
+colormap(redblue)
+xlabel('Distance (km)')
+ylabel('Depth (m)')
+title('Final Velocity')
+
+subplot(2,1,2) 
+pcolorjw(X,sigma_levels,along_sigma_constant(:,:,xx))
+cb = colorbar; ylabel(cb,'along-channel velocity (m/s)')
+colormap(redblue)
+caxis([-1.5,1.5])
+ax=gca;
+set(gca,'xlim',[0,max(X)])
+xlabel('Distance (km)')
+ylabel('Depth (m)')
+shading flat
+title('Sigma Coords')
+% set(gca, 'YDir', 'reverse') 
+sgtitle(strcat('Transect =', num2str(xx)));
+% 
+% filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No6_bin_interp_extrap\sigma\cl', ...
+%     sprintf('Along_Sigma_%s_line%d_transect%d', date, line, xx));
+% export_fig([filename, '.png'], '-m2');
+% savefig([filename, '.fig']);
+
+end
+
 %% SAVE variables
-% save(strcat('BI_','adcp_','L',num2str(line),'_',...
-%     date,'_cropped_','grid_','rotate_','bininterp_','extrap','.mat'),'along_extrap',...
-%     'along_extrap_constant','z','height_extrap','idx_start_interp','idx_end_interp',...
-%     'along_sigma','sigma_levels','X','time_bininterp','h_bininterp')
+save(strcat('BI_','adcp_','L',num2str(line),'_',...
+    date,'_cropped_','grid_','rotate_','bininterp_','extrap','.mat'),'along_extrap',...
+    'along_extrap_constant','z','height_extrap','idx_start_interp','idx_end_interp',...
+    'along_sigma','along_sigma_cl','sigma_levels','X','time_bininterp','h_bininterp',...
+    'transport','transport_sum','transport_cl','transport_sum_cl')
