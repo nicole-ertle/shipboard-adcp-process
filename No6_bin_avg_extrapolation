@@ -19,7 +19,9 @@
         % out)
             % ** if b is selected, there may be select ensembles that require 
             % using the second to last bin of data. 
+% Calculates cell count differences between measured values and extrap CL.
 % Calculates instantaneous transport.
+% Extrap to banks.
 % Conversion to sigma coordinates.
 
 % Note:  
@@ -32,6 +34,12 @@
 % along_sigma_cl = along_extrap_constant mapped to sigma coordinates.
 % Transport_cl = transport for along_extrap_constant for each ens/bin/transect.
 % Transport_cl_sum = sum of transport_cl for a single value for each transect.
+%
+% along_extrap_cl_lat_extrap = along_extrap_constant laterally extrapolated
+% to banks (constant extrap).
+% h_binavg_lat_extrap = depth laterally extrap to banks.
+% along_sigma_cl_lat_extrap = along_extrap_cl_lat_extrap mapped to sigma
+% coordinates.
 
 %% manually choose one survey:
 %% manually choose line
@@ -40,20 +48,20 @@ line=4; %specify line #
 %% MANUAL choose one survey: EDIT FILE NAMES (#)!!
 %% load correct file and CHECK LINE NUMBER!!
 % 
-date= "042023";
-load BI_adcp_L4_042023_cropped_grid_rotate_binavg.mat
+% date= "042023";
+% load BI_adcp_L4_042023_cropped_grid_rotate_binavg.mat
 
 % date= "062823";
-% load BI_adcp_L2_062823_cropped_grid_rotate_binavg.mat
+% load BI_adcp_L4_062823_cropped_grid_rotate_binavg.mat
 
 % date= "071323";
-% load BI_adcp_L2_071323_cropped_grid_rotate_binavg.mat
+% load BI_adcp_L4_071323_cropped_grid_rotate_binavg.mat
 
 % date= "031524";
-% load BI_adcp_L2_031524_cropped_grid_rotate_binavg.mat
+% load BI_adcp_L4_031524_cropped_grid_rotate_binavg.mat
 
 % date= "031824";
-% load BI_adcp_L2_031824_cropped_grid_rotate_binavg.mat
+% load BI_adcp_L4_031824_cropped_grid_rotate_binavg.mat
 
 %% set up matrices 
 dz= 0.25;
@@ -585,7 +593,51 @@ end
 % savefig([filename, '.fig']);
 % 
 % end
+%% ------------------------------------------------------------------------
+%% ------------------------------------------------------------------------
+%% difference in cell count between measured and extrap CL
 
+% initialize matrices
+nProf = size(along_mid, 2);  % number of profiles (columns)
+surf_cells = zeros(1, nProf, size(along_extrap,3));
+bot_cells  = zeros(1, nProf, size(along_extrap,3));
+meas_cells = zeros(1, nProf, size(along_extrap,3));
+
+for xx = 1:size(along_binavg,3)
+for i = 1:nProf
+    mid_col   = along_mid(:, i, xx);
+    extr_col  = along_extrap_constant(:, i, xx);
+
+    mid_nan   = isnan(mid_col);
+    extr_nan  = isnan(extr_col);
+
+    %measured non-nan cells in profile
+    meas_cells(1,i,xx) = sum(~mid_nan);
+
+    % cells that were NaN before but are now filled
+    new_cells = mid_nan & ~extr_nan;
+
+    % surface extrapolated cells
+    top_block = cumprod(mid_nan) == 1; %find the contiguous NaN block at the top of the measured column
+    surf_cells(1,i,xx) = sum(new_cells & top_block);
+
+    % bottom extrapolated cells
+    bot_block = flipud(cumprod(flipud(mid_nan)) == 1);%flip column to find contiguous NaN block at the bottom
+    bot_cells(1,i,xx) = sum(new_cells & bot_block);
+end
+end
+
+% totals
+n_mid    = sum(~isnan(along_mid(:)));
+n_extrap = sum(~isnan(along_extrap_constant(:)));
+added_total = n_extrap - n_mid;
+surf_total  = squeeze(nansum(surf_cells));
+bot_total   = squeeze(nansum(bot_cells));
+
+surf_total2= nansum(surf_total);
+bot_total2=nansum(bot_total);
+
+%% ------------------------------------------------------------------------
 %% ------------------------------------------------------------------------
 %% add instantaneous transports 
 
@@ -628,7 +680,71 @@ end
 transport_avg= nanmean(transport_sum)
 transport_cl_avg= nanmean(transport_cl_sum)
 
-%% Convert depth to sigma coordinates
+%% ------------------------------------------------------------------------
+%% ------------------------------------------------------------------------
+%% lateral extrapolation to banks
+% on depth coords, extrapolate one depth at a time.
+% out to distance X.
+% need to look at bathy; for now assume constant depth.
+
+% along_extrap_constant; %velocity 133x18x14
+% X; %distance across inlet, line specific 1x18
+% z; %133x1 starts at 0 in .25m increments, vector for each ensemble
+% h_binavg; %1x18x14; gives "max" depth
+
+%0 is left bank looking up estuary (defined in No5)
+%find left/right good bin (idx_start_interp)
+%copy out to X(1)-0.025?edges or just X(1)mid
+
+%copy mtx to new deliverable
+along_extrap_cl_lat_extrap = along_extrap_constant;
+h_binavg_lat_extrap = h_binavg;
+for xx = 1:size(along_extrap_cl_lat_extrap, 3) %t#
+for n= 1:size(along_extrap_cl_lat_extrap, 1)%cycle through bins
+    along_extrap_cl_lat_extrap(n,1:idx_start_interp(:,:,xx)-1,xx)= ...
+        along_extrap_cl_lat_extrap(n,idx_start_interp(:,:,xx),xx); %left
+    along_extrap_cl_lat_extrap(n,idx_end_interp(:,:,xx):length(X),xx)= ...
+        along_extrap_cl_lat_extrap(n,idx_end_interp(:,:,xx),xx); %right
+
+    h_binavg_lat_extrap(:,1:idx_start_interp(:,:,xx)-1,xx)= ...
+        h_binavg(:,idx_start_interp(:,:,xx),xx);
+    h_binavg_lat_extrap(:,idx_end_interp(:,:,xx):length(X),xx)= ...
+        h_binavg(:,idx_end_interp(:,:,xx),xx);
+
+end
+end
+
+%% plot
+
+for xx = 1:size(along_binavg,3)
+% xx=7;
+figure('color', 'white')
+pcolor(X,z,along_extrap_cl_lat_extrap(:,:,xx))
+hold on
+plot(X,h_binavg_lat_extrap(:,:,xx),'k','LineWidth',2)
+shading flat; 
+cb=colorbar; ylabel(cb,'along channel velocity (m/s)')
+caxis([-1.5,1.5])
+set(gca,'ydir','reverse','fontsize',12)
+ax=gca;
+% set(gca,'xlim',[0,max(X)])
+% xlim([0,X(end)+0.025]
+set(gca,'xlim',[0,X(end)+0.025])
+ax.YDir='reverse';
+ax.YLim=[0,16];
+colormap(redblue)
+xlabel('Projected Distance (km)')
+ylabel('Depth')
+title(strcat('Date= ', date, ' Transect=', num2str(xx)));
+
+
+    filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No6_bin_avg_extrap\constant-linear\lateral extrap', ...
+    sprintf('%s_line%d_transect%d', date, line, xx));
+export_fig([filename, '.png'], '-m2');
+savefig([filename, '.fig']);
+end
+%% ------------------------------------------------------------------------
+%% Convert depth to sigma coordinates poly/log
 
 N_levels = 10; %number of vertical levels
 sigma_levels = linspace(1,0,N_levels);
@@ -719,7 +835,7 @@ end
 % savefig([filename, '.fig']);
 % 
 % end
-
+%% ------------------------------------------------------------------------
 %% Convert depth to sigma coordinates Constant Linear
 
 N_levels = 10; %number of vertical levels
@@ -784,16 +900,89 @@ end
 % savefig([filename, '.fig']);
 % 
 % end
+%% ------------------------------------------------------------------------
+%% Convert depth to sigma coordinates Constant Linear LATERAL EXTRAP
+N_levels = 10; %number of vertical levels
+sigma_levels = linspace(1,0,N_levels);
+along_sigma_cl_lat_extrap = NaN(N_levels,width(along_extrap_constant),size(along_binavg,3));
+% cross_sigma_cl_lat_extrap = NaN(N_levels,width(cross_extrap_constant),size(along_binavg,3));
+
+for xx= 1:size(along_binavg,3)
+for n=1:length(X)
+    sig = (h_binavg_lat_extrap(:,n,xx)-z)/h_binavg_lat_extrap(:,n,xx);
+    if all(isnan(sig))
+        continue; %if true (all nans) then with skip rest of loop
+    else
+    d= find(sig>nearbottom); 
+    vel_v = interp1([sig(d);0],[along_extrap_cl_lat_extrap(d,n,xx);0],sigma_levels,'linear');%,'extrap');
+    vel_v(end)=0; %seafloor
+    % vel_u = interp1([sig(d);0],[cross_extrap(d,n,xx);0],sigma_levels,'linear');
+    % vel_u(end)=0; %seafloor
+    % vel_v(1)=along_extrap_constant(1,n,xx); %surface
+    % vel_u(1)=cross_extrap_constant(1,n,xx); 
+
+    along_sigma_cl_lat_extrap(:,n,xx)=vel_v(:);
+    % cross_sigma_cl_lat_extrap(:,n,xx)=vel_u(:);
+
+end
+end
+end
+
+%% PLOTS: Sigma CL x sec figs and save
+
+for xx = 1:size(along_binavg,3)
+figure('color','w')
+subplot(2,1,1)
+pcolor(X,z,along_extrap_cl_lat_extrap(:,:,xx))
+hold on
+plot(X,h_binavg_lat_extrap(:,:,xx),'k','linewidth',2)
+shading interp
+cb = colorbar; ylabel(cb,'along-channel velocity (m/s)')
+caxis([-1.5,1.5])
+ax=gca;
+set(gca,'YDir','reverse','YLim',[0,16])
+set(gca,'xlim',[0,X(end)+0.025])
+colormap(redblue)
+xlabel('Distance (km)')
+ylabel('Depth (m)')
+title('Final Velocity')
+
+subplot(2,1,2) 
+pcolor(X,sigma_levels, along_sigma_cl_lat_extrap(:,:,xx))
+cb = colorbar; ylabel(cb,'along-channel velocity (m/s)')
+colormap(redblue)
+caxis([-1.5,1.5])
+ax=gca;
+set(gca,'xlim',[0,X(end)+0.025])
+xlabel('Distance (km)')
+ylabel('Depth (m)')
+shading interp
+title('Sigma Coords')
+sgtitle(strcat('Transect =', num2str(xx)));
+
+    filename = fullfile('C:\Users\nsert\Documents\MATLAB\CZM\2023_Surveys\concatenated data\No6_bin_avg_extrap\constant-linear\lateral extrap\sigma', ...
+    sprintf('%s_line%d_transect%d', date, line, xx));
+export_fig([filename, '.png'], '-m2');
+savefig([filename, '.fig']);
+
+end
+
+
 %% SAVE variables
 % save(strcat('BI_','adcp_','L',num2str(line),'_',...
 %     date,'_cropped_','grid_','rotate_','binavg_','extrap','.mat'),'along_extrap',...
 %     'along_extrap_constant','z','height_extrap','idx_start_interp','idx_end_interp',...
 %     'along_sigma','along_sigma_cl','sigma_levels','X','time_binavg','h_binavg','transport','transport_sum',...
-%      'transport_cl','transport_cl_sum')
+%      'transport_cl','transport_cl_sum','along_extrap_cl_lat_extrap','h_binavg_lat_extrap','along_sigma_cl_lat_extrap')
 
+% % save(strcat('BI_','adcp_','L',num2str(line),'_',...
+% %     date,'_cropped_','grid_','rotate_','binavg_','extrap','.mat'),'transport',...
+% %     'transport_sum','transport_cl','transport_cl_sum','-append')
+
+% extrap to banks
 % save(strcat('BI_','adcp_','L',num2str(line),'_',...
-%     date,'_cropped_','grid_','rotate_','binavg_','extrap','.mat'),'transport',...
-%     'transport_sum','transport_cl','transport_cl_sum','-append')
+%     date,'_cropped_','grid_','rotate_','binavg_','extrap','.mat'),'along_extrap_cl_lat_extrap',...
+%       'h_binavg_lat_extrap','along_sigma_cl_lat_extrap','-append')
 
 %% See Nox_plots.m
 % on script to plot average instantaneous transport per transect over time 
